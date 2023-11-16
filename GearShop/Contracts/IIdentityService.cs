@@ -1,0 +1,19 @@
+﻿using GearShop.Models;
+
+namespace GearShop.Contracts;
+
+public interface IIdentityService
+{
+    /// <summary>
+    /// Последнее сообщение об ошибке. В стиле windows api.
+    /// </summary>
+    string LastError { get; }
+
+    /// <summary>
+    /// Проверят пользователя на возможность входа в систему. Возвращает токен для авторизации.
+    /// </summary>
+    /// <param name="userName"></param>
+    /// <param name="password"></param>
+    /// <returns></returns>
+    string Login(string userName, string password);
+}

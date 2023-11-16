@@ -1,0 +1,95 @@
+﻿@* Страница загрузки прайс листов *@
+
+<style>
+	.block-padding{
+		padding: 10px;
+	}
+
+	.label-process {
+		display: none;
+		padding: 10px;
+	}
+</style>
+
+<div class="text-center">
+	<h3 class="display-4">Загрузка прайс листа.</h3>
+	<form id="form" name="form" action="/UploadFile" enctype="multipart/form-data" method="post" class="block-padding">
+		<div class="buttons">
+			<div class="upload-button">
+				<input id="files" name="files" type="file" size="1" multiple />
+			</div>
+		</div>
+	</form>
+	<div>
+		<input id="btnUpload" type="submit" value="Загрузить" />
+	</div>
+	<div>
+		<label class="label-process" id="labelProcess" />
+	</div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+
+		$("#btnUpload").button().click(function() {
+			uploadFilesToStorage('files');
+		});
+
+		//Загрузка файлов в хранилище.
+		function uploadFilesToStorage(inputId) {
+			var input = document.getElementById(inputId);
+			var files = input.files;
+			var formData = new FormData();
+
+			let fileNames = [];
+
+			for (let i = 0; i != files.length; i++) {
+				formData.append("files", files[i]);
+				fileNames.push(files[i].name);
+			}
+
+			let labelProcess = $('#labelProcess');
+			labelProcess.text('Загрузка файлов в хранилище…');
+			labelProcess.show();
+
+			$.ajax(
+				{
+					url: "/LoadFiles/UploadFilesToStorage",
+					data: formData,
+					processData: false,
+					contentType: false,
+					type: "POST",
+					success: function(data) {
+						labelProcess.text('Успешно.');
+						SaveToDb(fileNames);
+					},
+					error: function() {
+						labelProcess.text('Ошибка загрузки файлов.');
+					}
+				}
+			);
+		}
+
+		//Обрабатывает и сохраняет загруженные файлы.
+		function SaveToDb(listNames) {
+			let labelProcess = $('#labelProcess');
+
+			$.ajax({
+				url: "/LoadFiles/SavePriceFilesToDb",
+				method: "POST",
+				data: { fileNames: listNames },
+				beforeSend: function() {
+					labelProcess.text('Загрузка файлов в базу данных…');
+				},
+				success: function(data) {
+					labelProcess.text('Успешно.');
+				},
+				error: function(error) {
+					console.log(error);
+					labelProcess.text('Ошибка загрузки файлов в базу данных.');
+				}
+			});
+		}
+});
+</script>

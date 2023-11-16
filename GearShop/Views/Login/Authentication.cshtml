@@ -1,0 +1,32 @@
+﻿@using GearShop.Models.Dto.Authentication
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model AuthData
+
+<div align="center">
+	<h1>Вход в магазин</h1>
+	<div>
+		<form asp-controller="Login" asp-action="Authentication" method="post">
+			<div asp-validation-summary="All"></div>
+			<table border="0" cellpadding="2" cellspacing="2">
+				<tr>
+					<td>Логин</td>
+					<td>
+						<input asp-for="Username" />
+						<span asp-validation-for="Username"></span>
+					</td>
+				</tr>
+				<tr>
+					<td>Пароль</td>
+					<td>
+						<input type="password"  asp-for="Password" />
+						<span asp-validation-for="Password"></span>
+					</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td> <button type="submit">Войти</button></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</div>

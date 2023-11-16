@@ -1,2 +1,2 @@
 # GearShop
-Auto parts store
+Магазин авто товаров

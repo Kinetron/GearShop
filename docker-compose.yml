@@ -1,0 +1,22 @@
+version: '3.4'
+
+services:
+  gearshop:
+    image: ${DOCKER_REGISTRY-}gearshop
+    build:
+      context: .
+      dockerfile: GearShop/Dockerfile
+
+  db:
+        image: "mcr.microsoft.com/mssql/server:2022-latest"
+        ports:
+          - "5533:1433"
+        container_name: mssql_docker
+        hostname: mssql_docker
+
+        environment:
+            MSSQL_COLLATION: "Cyrillic_General_CI_AS"    
+            SA_PASSWORD: "Iu0la9eo3KpoFoU"
+            ACCEPT_EULA: "Y"
+            
+
