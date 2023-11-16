@@ -6,8 +6,22 @@
     /// 
     /// Для свойств ссылочного типа обязательно значение отличное от null. 
     /// </summary>
-    public class ProductInfo
+    public class Product
     {
+        public Product()
+        {
+            
+        }
+
+        public Product(Product product)
+        {
+            Name = product.Name;
+            ImageName = product.ImageName;  
+            PurchaseCost = product.PurchaseCost;
+            RetailCost = product.RetailCost;
+            Rest = product.Rest;
+        }
+
         /// <summary>
         /// Полное наименование товара(у товара из прайса нет типа, только название).
         /// </summary>

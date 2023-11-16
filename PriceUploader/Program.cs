@@ -122,6 +122,7 @@ namespace PriceUploader
             return new List<ICommand>()
             {
                 new Upload(PrintText, PrintError, PrintProgress),
+                new UploadCsv(PrintText, PrintError, PrintProgress),
                 new Exit()
             };
         }

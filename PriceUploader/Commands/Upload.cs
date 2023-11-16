@@ -58,7 +58,7 @@ namespace PriceUploader.Commands
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-            List<ProductInfo> products = parser.ParseFile(filePath, _printProgress);
+            List<Product> products = parser.ParseFile(filePath, _printProgress);
             if (products == null)
             {
                 _sendErrorToUser($"{parser.LastError}{Environment.NewLine}");

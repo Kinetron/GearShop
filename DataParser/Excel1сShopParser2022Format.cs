@@ -60,7 +60,7 @@ namespace DataParser
         /// </summary>
         public string LastError { get; private set; }
 
-        public List<ProductInfo> ParseFile(string filePath, int lineLimit = 0)
+        public List<Product> ParseFile(string filePath, int lineLimit = 0)
         {
             return ParseFile(filePath, (curent, total)=>{}, lineLimit);
         }
@@ -71,7 +71,7 @@ namespace DataParser
         /// <param name="filePath"></param>
         /// <param name="lineLimit">размер результирующих данных</param>
         /// <returns></returns>
-        public List<ProductInfo> ParseFile(string filePath, Action<int, int> progressInfo, int lineLimit = 0)
+        public List<Product> ParseFile(string filePath, Action<int, int> progressInfo, int lineLimit = 0)
         {
             WorkBook workBook = null;
 
@@ -103,12 +103,12 @@ namespace DataParser
                 return null;
             }
 
-            List<ProductInfo> products = new List<ProductInfo>();
+            List<Product> products = new List<Product>();
 
             int totalRows = sheet.Rows.Count - (currentRowIndex + 1); //Всего строк в файле.
             if(lineLimit > 0) { totalRows  = lineLimit; }
 
-            int curentRow = 1; //Текущая обработанная строка.
+            int currentRow = 1; //Текущая обработанная строка.
 
             while (currentRowIndex < sheet.Rows.Count)
             {
@@ -124,13 +124,13 @@ namespace DataParser
 
                 try
                 {
-                    ProductInfo productInfo = ParseRow(data);
-                    if (productInfo == null)
+                    Product product = ParseRow(data);
+                    if (product == null)
                     {
                         return null;
                     }
 
-                    products.Add(productInfo);
+                    products.Add(product);
                 }
                 catch (Exception ex)
                 {
@@ -138,10 +138,10 @@ namespace DataParser
                     return null;
                 }
              
-                progressInfo(curentRow, totalRows); //Передаем пользователю о прогрессе обработки строк.
-                curentRow ++;
+                progressInfo(currentRow, totalRows); //Передаем пользователю о прогрессе обработки строк.
+                currentRow ++;
 
-                if (lineLimit != 0 && curentRow > lineLimit) break;
+                if (lineLimit != 0 && currentRow > lineLimit) break;
             }
 
             progressInfo(totalRows, totalRows); //Обработка завершена.
@@ -182,10 +182,10 @@ namespace DataParser
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private ProductInfo ParseRow(object[] data)
+        private Product ParseRow(object[] data)
         {
-            ProductInfo product = new ProductInfo();
-            Type type = typeof(ProductInfo);
+            Product product = new Product();
+            Type type = typeof(Product);
             
             for (int propertyIndex = 0; propertyIndex < _productModelPropertyNames.Length; propertyIndex++)
             {
@@ -252,7 +252,7 @@ namespace DataParser
         /// </summary>
         /// <param name="data"></param>
         /// <param name="filePath"></param>
-        public void SaveToСsvFile(List<ProductInfo> data, string filePath, string separator)
+        public void SaveToСsvFile(List<Product> data, string filePath, string separator)
         {
             using (StreamWriter writer = File.CreateText(filePath))
             {
