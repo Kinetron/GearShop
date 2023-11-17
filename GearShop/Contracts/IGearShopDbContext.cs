@@ -1,5 +1,6 @@
-﻿using GearShop.Services.Repository.Entities;
+﻿using GearShop.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace GearShop.Contracts;
 
@@ -11,9 +12,14 @@ public interface IGearShopDbContext
     DbSet<Users> Users { get; set; }
 
     /// <summary>
-    /// Роль пользователя.
+    /// Все продукты.
     /// </summary>
-    /// <param name="userName"></param>
-    /// <returns></returns>
-    string GetUserGroupRole(string userName);
+    DbSet<Product> Products { get; set; }
+    
+	/// <summary>
+	/// Роль пользователя.
+	/// </summary>
+	/// <param name="userName"></param>
+	/// <returns></returns>
+	string GetUserGroupRole(string userName);
 }

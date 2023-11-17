@@ -1,4 +1,7 @@
 ﻿using GearShop.Contracts;
+using GearShop.Models.Dto.Products;
+using GearShop.Models.Entities;
+using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 
 namespace GearShop.Services.Repository
 {
@@ -7,9 +10,9 @@ namespace GearShop.Services.Repository
     /// </summary>
     public class GearShopRepository : IGearShopRepository
     {
-        private readonly IGearShopDbContext _dbContext;
+        private readonly GearShopDbContext _dbContext;
 
-        public GearShopRepository(IGearShopDbContext dbContext)
+        public GearShopRepository(GearShopDbContext dbContext)
         {
             _dbContext = dbContext;
         }
@@ -43,6 +46,47 @@ namespace GearShop.Services.Repository
         public string GetUserGroupCode(string userName)
         {
             return _dbContext.GetUserGroupRole(userName);
+        }
+
+        /// <summary>
+        /// Получить список всех продуктов.
+        /// </summary>
+        /// <returns></returns>
+        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText)
+        {
+	        IQueryable<Product> data = _dbContext.Products;
+	        if (!string.IsNullOrEmpty(searchText))
+	        {
+		        data = data.Where(x => x.Name.Contains(searchText));
+	        }
+
+	        return data
+		        .Select(product =>
+			        new ProductDto()
+			        {
+				        Name = product.Name,
+				        Cost = product.RetailCost,
+				        Quantity = product.Rest
+			        })
+		        .Skip((currentPage - 1) * itemsPerPage)
+		        .Take(itemsPerPage)
+		        .ToList();
+        }
+
+		/// <summary>
+		/// Возвращает количество продуктов.
+		/// </summary>
+		/// <returns></returns>
+		public int GetProductCount(string searchText)
+        {
+	        if (string.IsNullOrEmpty(searchText))
+	        {
+		        return _dbContext.Products.Count();
+			}
+	        else
+	        {
+				return _dbContext.Products.Where(x=>x.Name.Contains(searchText)).Count();
+			}
         }
     }
 }

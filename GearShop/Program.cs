@@ -45,9 +45,10 @@ namespace GearShop
                 };
             });
 
+            builder.Services.AddSingleton<IFileStorage>(x=>new FileStorage("Upload\\Files"));
             builder.Services.AddScoped<IIdentityService>(x => 
                 new IdentityService(config["JwtSettings:Key"]!, x.GetRequiredService<IGearShopRepository>()));
-
+            
             builder.Services.AddDistributedMemoryCache();
 
             builder.Services.AddSession(options =>
@@ -57,10 +58,12 @@ namespace GearShop
                 options.Cookie.IsEssential = true;
             });
             
-            builder.Services.AddDbContext<IGearShopDbContext, GearShopDbContext>(options =>
+            builder.Services.AddDbContext<GearShopDbContext>(options =>
                 options.UseSqlServer(config["MsSqlConnectionStrings:Default"]));
 
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+            builder.Services.AddScoped<IDataSynchronizer, DataSynchronizer>();
+
+			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
             builder.Services.AddScoped<IGearShopRepository, GearShopRepository>();
 
             // Add services to the container.

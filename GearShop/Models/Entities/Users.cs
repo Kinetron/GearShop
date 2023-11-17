@@ -1,4 +1,4 @@
-﻿namespace GearShop.Services.Repository.Entities
+﻿namespace GearShop.Models.Entities
 {
     public class Users
     {

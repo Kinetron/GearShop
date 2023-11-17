@@ -2,13 +2,17 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using DataParser;
 using DataParser.Models;
 using DataParser.Models.Products;
 using DataParser.Services;
 using PriceUploader.Contracts;
+using PriceUploader.Services;
 
 namespace PriceUploader.Commands
 {
@@ -25,7 +29,7 @@ namespace PriceUploader.Commands
         public string Name { get; } = "csv";
         public string Description { get; } = "Загрузка прайс листа из csv файла на сервер";
 
-        public UploadCsv(Action<string> sendTextToUser, Action<string> sendErrorToUser, Action<int, int> printProgress)
+		public UploadCsv(Action<string> sendTextToUser, Action<string> sendErrorToUser, Action<int, int> printProgress)
         {
             _sendTextToUser = sendTextToUser;
             _sendErrorToUser = sendErrorToUser;
@@ -42,20 +46,33 @@ namespace PriceUploader.Commands
                 EventEndWork?.Invoke();
             }
 
-            CsvParser parser = new CsvParser();
-            List<Product> products = parser.ParseFile(files[0], '|');
-            if (products == null)
+			//CsvParser parser = new CsvParser();
+			//List<Product> products = parser.ParseFile(files[0], '|');
+			//if (products == null)
+			//{
+			//    _sendErrorToUser($"{parser.LastError}{Environment.NewLine}");
+			//    return;
+			//}
+
+			//Разбивка по типам товара. Не реализована.
+			//_sendTextToUser($"Файл считан. Разбор данных.");
+			//ProductTypesParser productTypesParser = new ProductTypesParser();
+			//productTypesParser.ParseProducts(products);
+			//var allProducts = productTypesParser.AllProducts;
+
+			_sendTextToUser($"Загрузка файла на сервер...{Environment.NewLine}");
+            FileUploader fileUploader = new FileUploader();
+            HttpResponseMessage answer = fileUploader.Upload("https://localhost:44342/LoadProductList/UploadCsv", 
+	            files[0], "UploaderMan898qw", "IpYNrGy5M2TP4eewVdDcII8lOVrHVn2g3c7R5HXHnmPz").Result;
+
+            if (answer.StatusCode != HttpStatusCode.OK)
             {
-                _sendErrorToUser($"{parser.LastError}{Environment.NewLine}");
+	            _sendTextToUser($"Ошибка загрузки файла: {(int)answer.StatusCode}. Попробуйте еще раз выполнить команду.{Environment.NewLine}");
+				EventEndWork?.Invoke();
                 return;
-            }
+			}
 
-            _sendTextToUser($"Файл считан. Разбор данных.");
-
-            ProductTypesParser productTypesParser = new ProductTypesParser();
-            productTypesParser.ParseProducts(products);
-            var allProducts = productTypesParser.AllProducts;
-
+            _sendTextToUser($"Успешно.{Environment.NewLine}");
             EventEndWork?.Invoke();
         }
 
