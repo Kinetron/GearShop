@@ -12,7 +12,7 @@ namespace GearShop.Controllers.Shop
 		/// <summary>
 		/// Записей на одну отображаемую страницу.
 		/// </summary>
-		private const int recordPerPage = 5;
+		private const int recordPerPage = 9;
 
 	    public ProductListController(IGearShopRepository gearShopRepository)
 	    {

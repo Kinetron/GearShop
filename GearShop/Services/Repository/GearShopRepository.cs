@@ -64,6 +64,7 @@ namespace GearShop.Services.Repository
 		        .Select(product =>
 			        new ProductDto()
 			        {
+                        Id = product.Id,
 				        Name = product.Name,
 				        Cost = product.RetailCost,
 				        Quantity = product.Rest
