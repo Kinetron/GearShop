@@ -2,27 +2,41 @@
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <style>
-	.searchInput {
-		padding: 10px;
+	.searchPanel {
+		padding: 0 0 10px 0;
+	}
+	
+	.product-cell{
+		height: 200px!important;   
 	}
 
-	.searchButton {
-		padding: 10px;
+	.product-title {
+		height: 80px !important;
+	}
+
+	.loader {
+		text-align: center;
+	}
+
+	.in-basket {
+		color: green!important;
+		box-sizing: border-box;
+		padding: 0 5px 0 5px;
 	}
 </style>
 
 <div id="mainPanel">
-	<div class="searchInput">
-		<input id="searchInput" type="text" />
+	<div class="searchPanel">
+		<input id="searchInput" type="text"/>
 		<button id="searchButton" type="button">Поиск</button>
+		<div id="messageControl"></div>
 	</div>
-	
+	<div id="loaderIndicator" class="loader"><img src="/images/loader.gif" />Загрузка данных...</div>
 	<div id="tbProductList"></div>
 	<div id="productsPaginator"></div>
 	<label id="recordCountInfo"></label>
-	<div id="grid"></div>
+	<div id="localgrid"></div>
 </div>
-
 
 <script type="text/javascript">
 $(document).ready(function() {
@@ -41,27 +55,38 @@ $(document).ready(function() {
 				$('#recordCountInfo').text(`Найдено ${response.totalRecords} товаров`);
 				$('#productsPaginator').puipaginator({
 					totalRecords: response.totalRecords,
-					rows: response.rows
+					rows: response.rows 
 				});
+
+				$('#productsPaginator').puipaginator('setState', { totalRecords: response.totalRecords, page:0 });
 			}
 		});
 	}
 
 	function UpdateData(searchText) {
-			$('#tbProductList').puidatatable('reload');
-			UpdatePaginator(searchText);
+		$('#tbProductList').puidatagrid('reload');
+		UpdatePaginator(searchText);
+	}
+
+	function GetFirstPageIndex() {
+		return 1;
 	}
 
 	$('#mainPanel').puipanel();
-		$('#searchInput').puiinputtext();
+	$('#searchInput').puiinputtext();
+	$('#messageControl').puigrowl(); @*Всплывающее сообщение*@
+	addMessage = function(msg) {
+		$('#messageControl').puigrowl('show', msg);
+	};
 
-		let currentPage = 1;
+	let currentPage = GetFirstPageIndex();
 		let searchText = '';
 
 		$('#searchButton').puibutton({
 			click: function(event) {
 				searchText = $('#searchInput').val();
 				UpdateData(searchText);
+				currentPage = GetFirstPageIndex();
 			}
 		});
 
@@ -69,89 +94,88 @@ $(document).ready(function() {
 		if (e.key === 'Enter' || e.keyCode === 13) {
 			searchText = $('#searchInput').val();
 			UpdateData(searchText);
+			currentPage = GetFirstPageIndex();
 		}
 	});
 	
 	$('#productsPaginator').puipaginator({
 			paginate: function(event, state) {
 				currentPage = state.page + 1;
-				$('#tbProductList').puidatatable('reload');
+				$('#tbProductList').puidatagrid('reload');
 			}
 		});
 		
 		UpdatePaginator(searchText);
 
-		$('#tbProductList').puidatatable({
-			caption: 'Список продуктов',
-			selectionMode: 'single',
-			columns: [
-				{ field: 'name', headerText: 'Наименование' },
-				{ field: 'quantity', headerText: 'В наличии' },
-				{ field: 'cost', headerText: 'Цена, Р' },
-			],
+		$('#tbProductList').puidatagrid({
+			header: 'Список товаров',
 			datasource: function(callback) {
 				$.ajax({
 					type: "GET",
 					url: '@Url.Action("GetProductList", "ProductList")',
 					data: { currentPage: currentPage, searchText: searchText },
 					dataType: "json",
+					beforeSend: function() {
+						$('#loaderIndicator').show();
+					},
 					error: function(error) {
-						console.log(error);
+						$('#loaderIndicator').hide();
+						addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
 					},
 					context: this,
 					success: function(response) {
+						$('#loaderIndicator').hide();
 						callback.call(this, response);
 					}
 				});
-			}
-		});
-
-		$('#tbProductList').puidatatable({
-		rowSelect: function(event, data) {
-			 console.log(data);
-			}
-		});
-	
-		$('#grid').puidatagrid({
-			paginator: {
-				rows: 9
 			},
-			header: 'Local Javascript Array',
-			datasource: [
-				{ 'brand': 'Volkswagen', 'year': 2012, 'color': 'White', 'vin': 'dsad231ff' },
-				{ 'brand': 'Audi', 'year': 2011, 'color': 'Black', 'vin': 'gwregre345' },
-				{ 'brand': 'Renault', 'year': 2005, 'color': 'Gray', 'vin': 'h354htr' },
-				{ 'brand': 'BMW', 'year': 2003, 'color': 'Blue', 'vin': 'j6w54qgh' },
-				{ 'brand': 'Ford', 'year': 1995, 'color': 'White', 'vin': 'hrtwy34' },
-				{ 'brand': 'Fiat', 'year': 2005, 'color': 'Black', 'vin': 'jejtyj' },
-				{ 'brand': 'Honda', 'year': 2012, 'color': 'Yellow', 'vin': 'g43gr' },
-				{ 'brand': 'Volvo', 'year': 2013, 'color': 'White', 'vin': 'greg34' },
-				{ 'brand': 'Ford', 'year': 2000, 'color': 'Black', 'vin': 'h54hw5' },
-				{ 'brand': 'BMW', 'year': 2013, 'color': 'Red', 'vin': '245t2s' },
-				{ 'brand': 'Jaguar', 'year': 2011, 'color': 'Blue', 'vin': 'few234' },
-				{ 'brand': 'Ford', 'year': 2010, 'color': 'White', 'vin': 'bfnt23' },
-				{ 'brand': 'BMW', 'year': 2011, 'color': 'Green', 'vin': 'aad423' },
-				{ 'brand': 'Mercedes', 'year': 2012, 'color': 'Black', 'vin': 'vx23f2' },
-				{ 'brand': 'Fiat', 'year': 2014, 'color': 'Grey', 'vin': 'vxr23fd' },
-				{ 'brand': 'Renault', 'year': 2015, 'color': 'Blue', 'vin': 'vxc23f' },
-				{ 'brand': 'Volvo', 'year': 2015, 'color': 'Yellow', 'vin': 'vxcff4' },
-				{ 'brand': 'Volvo', 'year': 2015, 'color': 'White', 'vin': 'ht3w1d' },
-				{ 'brand': 'Renault', 'year': 2013, 'color': 'Black', 'vin': 'az12s2' },
-				{ 'brand': 'Fiat', 'year': 2015, 'color': 'Green', 'vin': 'ds12d1' },
-				{ 'brand': 'Volkswagen', 'year': 2001, 'color': 'Grey', 'vin': 'vsd3f2' },
-				{ 'brand': 'Volvo', 'year': 2011, 'color': 'Blue', 'vin': 'dsy4g22' },
-				{ 'brand': 'BMW', 'year': 1996, 'color': 'Black', 'vin': 'h3g254' },
-				{ 'brand': 'Audi', 'year': 2005, 'color': 'Red', 'vin': 'g54gwg' },
-				{ 'brand': 'Ford', 'year': 2011, 'color': 'Blue', 'vin': '14ffqf4' },
-				{ 'brand': 'BMW', 'year': 2015, 'color': 'Black', 'vin': 'h465he6' },
-				{ 'brand': 'Jaguar', 'year': 2010, 'color': 'White', 'vin': 'dsf4frt' },
-				{ 'brand': 'Jaguar', 'year': 2009, 'color': 'Red', 'vin': 'g6hehr' },
-			],
-			content: function (car) {
-				return $('<div title="' + car.vin + '"><img src="/images/' + car.brand +
-					'.gif" /><div class="car-detail">' + car.year + ' - ' + car.color + '</div><button>Купить</button></div>').puipanel();
+			content: function (product) {
+				return CreateProductCell(product);
 			}
 		});
 });
+
+
+function bay(productId) {
+		console.log(productId);
+		$('#bay' + productId).text('В корзине');
+		$('#bay' + productId).addClass('in-basket');
+}
+
+@*Переделать на шаблоны.*@
+	function CreateProductCell(product) {
+			let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
+					<div class="ui-panel-titlebar ui-widget-header ui-helper-clearfix ui-corner-all product-title">
+						<span class="ui-panel-title">${product.name}</span>
+				</div>
+				
+				<div class="ui-panel-content ui-widget-content">
+							<img src="/images/${product.imageName}">
+							<button id="bay${product.id}" type="button" onClick="(bay(${product.id}));"
+								class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">Купить</button>
+							<div class="car-detail">${product.quantity} - ${product.cost}</div>
+				</div>
+			</div>`;
+
+			let button = `bay${product.id}`;
+			//console.log(button);
+			$('#'+button).puibutton({
+				click: function(event) {
+					let id = product.id;
+					console.log(product.id);
+				}
+			});
+
+		return html;
+
+
+	return $('<div title="' +
+		product.name +
+			'" style="align:left";><img src="/images/Audi.gif" /><div class="car-detail">' +
+		product.quantity +
+		' - ' +
+		product.cost +
+			'</div><button>Купить</button></div>').puipanel();
+}
 </script>
 	 

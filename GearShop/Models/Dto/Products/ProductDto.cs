@@ -2,6 +2,8 @@
 {
     public class ProductDto
     {
+        public int Id { get; set; }
+
         /// <summary>
         /// Наименование товара.
         /// </summary>
@@ -16,5 +18,10 @@
         /// Цена.
         /// </summary>
         public decimal? Cost { get; set; }
+
+        /// <summary>
+        /// Картинка товара.
+        /// </summary>
+        public string ImageName { get; set; } = "Audi.gif";
     }
 }
