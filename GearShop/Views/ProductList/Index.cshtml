@@ -7,7 +7,7 @@
 	}
 	
 	.product-cell{
-		height: 200px!important;   
+		height: 180px!important;   
 	}
 
 	.product-title {
@@ -23,6 +23,37 @@
 		box-sizing: border-box;
 		padding: 0 5px 0 5px;
 	}
+
+	.image {
+		padding: 10px;
+		width: 120px;
+		height: 120px;
+	}
+
+	.product-info {
+		height: 120px;
+	}
+
+	.button-buy {
+		padding: 5px;
+		float: right;
+	}
+	
+	.price {
+		padding: 10px;
+		font-weight: bold;
+		font-size: 1.5em;
+	}
+
+	#buy-block{
+		width: 100%;
+		overflow: hidden;
+	}
+
+		#buy-block > div {
+		width: 30%;
+		display: inline-block;
+	}
 </style>
 
 <div id="mainPanel">
@@ -31,7 +62,7 @@
 		<button id="searchButton" type="button">Поиск</button>
 		<div id="messageControl"></div>
 	</div>
-	<div id="loaderIndicator" class="loader"><img src="/images/loader.gif" />Загрузка данных...</div>
+	<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
 	<div id="tbProductList"></div>
 	<div id="productsPaginator"></div>
 	<label id="recordCountInfo"></label>
@@ -40,6 +71,9 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
+	BuyLogicScript.SynchronizeNoRegUserGuid(); 
+	BuyUiScript.Init();
+
 	@*Обновляет данные пейдженатора-количество строк и страниц.*@
 	function UpdatePaginator(searchText) {
 		$.ajax({
@@ -135,47 +169,127 @@ $(document).ready(function() {
 		});
 });
 
-
-function bay(productId) {
-		console.log(productId);
+	@*Купить товар.*@
+		function buy(productId, productName) {
+		
 		$('#bay' + productId).text('В корзине');
 		$('#bay' + productId).addClass('in-basket');
+
+		$('#BasketLink').show();
+
+		let product = { productId: productId, productName: productName };
+		BuyLogicScript.Basket.push(product);
+		console.log(BuyLogicScript.Basket);
+		BuyLogicScript.SaveBasketToLocal();
+		addMessage([{ severity: 'info', summary: 'Корзина', detail: `Товар ${productName} добавлен в корзину.` }]);
 }
 
 @*Переделать на шаблоны.*@
-	function CreateProductCell(product) {
-			let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
-					<div class="ui-panel-titlebar ui-widget-header ui-helper-clearfix ui-corner-all product-title">
-						<span class="ui-panel-title">${product.name}</span>
-				</div>
+function CreateProductCell(product) {
+	@*переделать на шаблон!!!*@
+	let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
+						  <div class="product-info">
+							<img align="left" src="/images/${product.imageName}" class="image">
+							<div>${product.name}</div>									
+						  </div>
+						  <div id="buy-block">
+								  <div class="price"> ${product.cost}&nbsp;₽</div>
+								<div>В наличии: ${product.quantity}</div>
+								<div>
+									<button id="bay${product.id}" type="button" onClick="(buy(${product.id},'${product.name}'));"
+												class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">Купить</button>
+								</div>					
+						 </div>
+					</div>`;
+
+	let button = `bay${product.id}`;
+	//console.log(button);
+	$('#' + button).puibutton({
+		click: function(event) {
+			let id = product.id;
+			console.log(product.id);
+		}
+	});
+
+	return html;
+}
+
+@*Методы для работы UI интерфейса.*@
+const BuyUiScript = {
+	Init() {
+	@*Нажатие на «Корзина» в меню.*@
+		$('#BasketLink').click(function() {
+				console.log(895);
+		});
+	},
+}
+
+@*Логика покупки товаров.*@
+const BuyLogicScript = {
+	@*Ключ браузерного хранилища для  хранения уникального идентификатора
+		не зарегистрированного пользователя.
+	*@
+	StorageUserGuidKey: 'gearShopNoRegisterUserGuid',
+	StorageBasketKey: 'gearShopBasket',
+	UserGuid: null,
+
+	@*Возвращает уникальный идентификатор для не зарегистрированного пользователя, в его браузере.*@
+	GetUserGuid() {
+		if (BuyLogicScript.UserGuid != null) return BuyLogicScript.UserGuid;
+
+		let userGuid = localStorage.getItem(BuyLogicScript.StorageUserGuidKey);
+		if (userGuid != null) {
+			BuyLogicScript.UserGuid = userGuid;
+			return userGuid;
+		}
+	
+		@*От сервера получаем новый идентификатор для не зарегистрированного пользователя.*@
+		$.ajax({
+			type: "GET",
+			url: '@Url.Action("GetGuidFoNoRegistered", "User")',
+			dataType: "json",
+			beforeSend: function() {
+			},
+			error: function(error) {
+				addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
+			},
+			success: function(response) {
+				localStorage.setItem(BuyLogicScript.StorageUserGuidKey, response.guid); @*Сохраняем в хранилище браузера пользователя*@
+				BuyLogicScript.UserGuid = response.guid;
 				
-				<div class="ui-panel-content ui-widget-content">
-							<img src="/images/${product.imageName}">
-							<button id="bay${product.id}" type="button" onClick="(bay(${product.id}));"
-								class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">Купить</button>
-							<div class="car-detail">${product.quantity} - ${product.cost}</div>
-				</div>
-			</div>`;
+				return response.guid;
+			}
+		});
+	},
+	@*Синхронизирует уникальный идентификатор не зарегистрированного пользователя на стороне браузера и guid на стороне сервера. *@
+	SynchronizeNoRegUserGuid() {
+		let userGuid = localStorage.getItem(BuyLogicScript.StorageUserGuidKey);
+		if (userGuid == null) return null;
+		
+	@* Возможно удаление идентификатора в БД, проверяем наличие.
+	   Если guid нет в БД – сервер его добавит.
+	*@
+		$.ajax({
+			type: "GET",
+			url: '@Url.Action("SynchronizeNoRegUserGuid", "User")',
+			data: {guid: userGuid},
+			beforeSend: function() {
+			},
+			error: function(error) {
+				addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
+			},
+			success: function(response) {
+			}
+		});
+	},
+	@*Корзина*@
+	Basket: [],
 
-			let button = `bay${product.id}`;
-			//console.log(button);
-			$('#'+button).puibutton({
-				click: function(event) {
-					let id = product.id;
-					console.log(product.id);
-				}
-			});
-
-		return html;
-
-
-	return $('<div title="' +
-		product.name +
-			'" style="align:left";><img src="/images/Audi.gif" /><div class="car-detail">' +
-		product.quantity +
-		' - ' +
-		product.cost +
-			'</div><button>Купить</button></div>').puipanel();
+	@*Сохраняет корзину в локальное хранилище(на стороне клиента)*@
+	SaveBasketToLocal() {
+		localStorage.setItem(BuyLogicScript.StorageBasketKey, JSON.stringify(BuyLogicScript.Basket));
+		console.log(BuyLogicScript.Basket);
+	}
 }
 </script>
 	 

@@ -26,20 +26,29 @@ namespace GearShop.Services.Repository
         /// </summary>
         public DbSet<Product> Products { get; set; }
 
-        public IDbContextTransaction BeginTransaction()
-        {
-	        return Database.BeginTransaction();
-        }
-
-        public void Commit()
-        {
-	        throw new NotImplementedException();
-        }
+		/// <summary>
+		/// Не зарегистрированые покупатели.
+		/// </summary>
+		public DbSet<NonRegisteredBuyer> NonRegisteredBuyers { get; set; }
 
         public string GetUserGroupRole(string userName)
         {
            return this.Database.SqlQueryRaw<string>("SELECT [dbo].GetUserGroupRole(@userName) as value",
                 new SqlParameter("userName", userName)).FirstOrDefault();
         }
-    }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+	        modelBuilder.Entity<NonRegisteredBuyer>(entity =>
+	        {
+		        entity.HasKey(e => e.ClusterId);
+
+		        entity.ToTable(tb =>
+		        {
+			        tb.HasTrigger("tr_NonRegisteredBuyers_LogIns");
+			        tb.HasTrigger("tr_NonRegisteredBuyers_LogUpd");
+		        });
+	        });
+        }
+	}
 }

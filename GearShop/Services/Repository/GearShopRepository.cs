@@ -1,7 +1,9 @@
 ﻿using GearShop.Contracts;
+using GearShop.Models;
 using GearShop.Models.Dto.Products;
 using GearShop.Models.Entities;
 using Microsoft.CodeAnalysis.Elfie.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 
 namespace GearShop.Services.Repository
 {
@@ -89,5 +91,37 @@ namespace GearShop.Services.Repository
 				return _dbContext.Products.Where(x=>x.Name.Contains(searchText)).Count();
 			}
         }
+
+		/// <summary>
+		/// Проверяет наличие guid в БД. Если нет – добавляет новую запись.
+		/// </summary>
+		/// <param name="guid"></param>
+		/// <param name="ipAddress"></param>
+		/// <returns></returns>
+		public async Task<bool> SynchronizeNoRegUserGuidAsync(string guid, string ipAddress)
+		{
+			try
+			{
+				Guid userGuid = Guid.Parse(guid);
+				int count = await _dbContext.NonRegisteredBuyers.Where(u => u.BuyerGuid == userGuid).CountAsync();
+
+				if (count == 0)
+				{
+					NonRegisteredBuyer buyer = new NonRegisteredBuyer()
+					{
+						BuyerGuid = userGuid,
+						IpAddress = ipAddress
+					};
+					_dbContext.NonRegisteredBuyers.Add(buyer);
+					await _dbContext.SaveChangesAsync();
+				}
+			}
+			catch (Exception ex)
+			{
+				return await Task.FromResult(false);
+			}
+			
+			return await Task.FromResult(true);
+		}
     }
 }

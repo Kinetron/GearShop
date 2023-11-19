@@ -1,0 +1,84 @@
+﻿@*Корзина. Главна страница.*@
+@{
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div id="mainPanel">
+	<div>Корзина</div>
+	<div id="tbBasketList"></div>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	BasketScript.Init();
+});
+
+
+const BasketScript = {
+		Init() {
+			@*Нажатие на «Корзина» в меню.*@
+			$('#BasketLink').click(function() {
+				console.log(895);
+			});
+
+			var localData = [
+				{'brand': 'Volkswagen', 'year': 2012, 'color': 'White', 'vin': 'dsad231ff'},
+				{'brand': 'Audi', 'year': 2011, 'color': 'Black', 'vin': 'gwregre345'},
+				{'brand': 'Renault', 'year': 2005, 'color': 'Gray', 'vin': 'h354htr'},
+				{'brand': 'BMW', 'year': 2003, 'color': 'Blue', 'vin': 'j6w54qgh'},
+				{'brand': 'Mercedes', 'year': 1995, 'color': 'White', 'vin': 'hrtwy34'},
+				{'brand': 'Volvo', 'year': 2005, 'color': 'Black', 'vin': 'jejtyj'},
+				{'brand': 'Honda', 'year': 2012, 'color': 'Yellow', 'vin': 'g43gr'},
+				{'brand': 'Jaguar', 'year': 2013, 'color': 'White', 'vin': 'greg34'},
+				{'brand': 'Ford', 'year': 2000, 'color': 'Black', 'vin': 'h54hw5'},
+				{ 'brand': 'Fiat', 'year': 2013, 'color': 'Red', 'vin': '245t2s'}
+			];
+ 
+			$('#tbBasketList').puidatatable({
+				caption: 'Local Datasource',
+				columns: [
+					{ field: 'productName', headerText: 'Товар' },
+					{ field: 'count', headerText: 'Количество' },
+					{ field: 'xx1', headerText: 'Color1',content: function(rowData) {
+							//console.log(rowData);
+						return $("<button></button>").puibutton({
+							icon: 'ui-icon-pencil'
+						});
+					} }
+				],
+				datasource: BasketScript.GetBacketFromStorage()
+			});
+		},
+
+		StorageBasketKey: 'gearShopBasket',
+		
+		@*Возвращает купленные пользователем товары.*@
+		GetBacketFromStorage() {
+		   let basket = localStorage.getItem(BasketScript.StorageBasketKey);
+			if (basket == null){
+				return null;
+			}
+		   basket = JSON.parse(basket);
+
+		   const groupById = basket.reduce((acc, item) => {
+				   const existingIndex = acc.findIndex(el => el.productId === item.productId);
+
+				   if (existingIndex > -1) {
+					   acc[existingIndex].count += 1;
+				   } else 
+				   {
+					   acc.push({
+						   productId: item.productId,
+						   productName: item.productName,
+						   count: 1
+					   });
+				   };
+				   return acc;
+			   },
+			   []);
+
+		   return groupById.sort((first, second) => first.productName.localeCompare(second.productName));
+		}
+	}
+</script>
+
