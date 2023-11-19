@@ -32,5 +32,12 @@ namespace GearShop.Contracts
         /// </summary>
         /// <returns></returns>
         int GetProductCount(string searchText);
-	}
+
+		/// <summary>
+		/// Проверяет наличие guid в БД. Если нет – добавляет новую запись.
+		/// </summary>
+		/// <param name="guid"></param>
+		/// <returns></returns>
+		Task<bool> SynchronizeNoRegUserGuidAsync(string guid, string ipAddress);
+    }
 }

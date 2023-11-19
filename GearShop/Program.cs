@@ -50,8 +50,9 @@ namespace GearShop
                 new IdentityService(config["JwtSettings:Key"]!, x.GetRequiredService<IGearShopRepository>()));
             
             builder.Services.AddDistributedMemoryCache();
+			builder.Services.AddHttpContextAccessor();
 
-            builder.Services.AddSession(options =>
+			builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromSeconds(1800);
                 options.Cookie.HttpOnly = true;
