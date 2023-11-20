@@ -3,9 +3,28 @@
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<style>
+.button {
+	height: 20px;
+	width: 20px;
+}
+.label-count {
+	padding: 5px;
+}
+
+	#сreateOrderBlock {
+		padding: 5px 0 0 0;
+	    text-align: right;
+		display: none;
+ }
+</style>
+
 <div id="mainPanel">
-	<div>Корзина</div>
 	<div id="tbBasketList"></div>
+	<label id="productQuantityLabel"></label>
+	<div id="сreateOrderBlock">
+		<button id="btnCheckout" type="button">Оформить заказ</button>
+	</div>
 </div>
 
 <script type="text/javascript">
@@ -13,71 +32,129 @@ $(document).ready(function() {
 	BasketScript.Init();
 });
 
-
 const BasketScript = {
-		Init() {
-			@*Нажатие на «Корзина» в меню.*@
-			$('#BasketLink').click(function() {
-				console.log(895);
-			});
 
-			var localData = [
-				{'brand': 'Volkswagen', 'year': 2012, 'color': 'White', 'vin': 'dsad231ff'},
-				{'brand': 'Audi', 'year': 2011, 'color': 'Black', 'vin': 'gwregre345'},
-				{'brand': 'Renault', 'year': 2005, 'color': 'Gray', 'vin': 'h354htr'},
-				{'brand': 'BMW', 'year': 2003, 'color': 'Blue', 'vin': 'j6w54qgh'},
-				{'brand': 'Mercedes', 'year': 1995, 'color': 'White', 'vin': 'hrtwy34'},
-				{'brand': 'Volvo', 'year': 2005, 'color': 'Black', 'vin': 'jejtyj'},
-				{'brand': 'Honda', 'year': 2012, 'color': 'Yellow', 'vin': 'g43gr'},
-				{'brand': 'Jaguar', 'year': 2013, 'color': 'White', 'vin': 'greg34'},
-				{'brand': 'Ford', 'year': 2000, 'color': 'Black', 'vin': 'h54hw5'},
-				{ 'brand': 'Fiat', 'year': 2013, 'color': 'Red', 'vin': '245t2s'}
-			];
- 
+		@*Изменяет количество товара в корзине*@
+		ChangeQuantity(productId, step) {
+			const basket = BasketScript.Backet;
+			const index = basket.findIndex(i => i.id === productId);
+			basket[index].amount += step;
+
+			if (basket[index].amount == -1) basket[index].amount = 0;
+
+			$(`#count${productId}`).text(basket[index].amount);
+			this.OnChangeBasketData();
+		},
+
+		@*Удаляет продукт из списка.*@
+		RemoveProduct(productId) {
+			const basket = BasketScript.Backet;
+			basket.splice(basket.findIndex(i => i.id == productId), 1);
+			$('#tbBasketList').puidatatable('reload');
+			this.OnChangeBasketData();
+		},
+
+		@*Формирует ячейку с данными о количестве товаре.*@
+		CreateCountCell(rowData) {
+			const btnAdd = $(`<button class="button" onClick="BasketScript.ChangeQuantity(${rowData.id}, 1)"></button>`).puibutton({
+				icon: 'fa-plus'
+			}).prop('outerHTML');
+
+			const btnRemove = $(`<button class='button'  onClick="BasketScript.ChangeQuantity(${ rowData.id }, -1)"></button>`).puibutton({
+				icon: 'fa-minus'
+			}).prop('outerHTML');
+
+			const text = `<label class="label-count" id="count${rowData.id}">${rowData.amount}</label>`;
+
+			return  btnAdd + text + btnRemove ;
+		},
+
+		Init() {
+			$('#btnCheckout').puibutton({
+			icon: 'fa-shopping-cart',
+				click: () => {
+					const basket = { json: JSON.stringify(BasketScript.Backet) };
+					window.location = '@Url.Action("CreateOrder", "Order")?' + $.param(basket);
+				}
+			});
+		
 			$('#tbBasketList').puidatatable({
-				caption: 'Local Datasource',
+				caption: 'Товары в корзине',
+				emptyMessage: 'Корзина пуста',
 				columns: [
-					{ field: 'productName', headerText: 'Товар' },
-					{ field: 'count', headerText: 'Количество' },
-					{ field: 'xx1', headerText: 'Color1',content: function(rowData) {
-							//console.log(rowData);
-						return $("<button></button>").puibutton({
-							icon: 'ui-icon-pencil'
-						});
-					} }
+					{ field: 'name', headerText: 'Товар' },
+					{ field: 'cost', headerText: 'Цена, шт' },
+					{
+					  field: 'amount', headerText: 'Количество',
+					  content: (rowData) => BasketScript.CreateCountCell(rowData)
+					},
+					{ field: '', headerText: '', 
+						content: (rowData) => {
+						return $('<button class="button"></button>').puibutton({
+							icon: 'fa-remove',
+							click: () => BasketScript.RemoveProduct(rowData.productId)
+							});
+						}
+					},
 				],
-				datasource: BasketScript.GetBacketFromStorage()
+				datasource: BasketScript.GetBacketFromStorage(),
 			});
 		},
 
 		StorageBasketKey: 'gearShopBasket',
-		
+
+		@*Текущая корзина.*@
+		Backet: null,
+
+		@*Обработка события обновления данных в корзине. События у грида нет, поэтому обновляем в ручную. Желательно дописать в primeUI событие.*@
+		OnChangeBasketData() {
+			if (this.Backet != null && this.Backet.length > 0) {
+				$('#сreateOrderBlock').show();
+				
+				let totalCost = 0;
+				this.Backet.forEach((item) => {
+					totalCost+= item.cost * item.amount;
+				});
+
+			$('#productQuantityLabel').text(`Товаров ${this.Backet.length} на сумму ${totalCost}`);
+
+			} else {
+				$('#сreateOrderBlock').hide();
+			}
+		},
+
 		@*Возвращает купленные пользователем товары.*@
 		GetBacketFromStorage() {
-		   let basket = localStorage.getItem(BasketScript.StorageBasketKey);
+
+			if (BasketScript.Backet != null) return BasketScript.Backet;
+			
+		    let basket = localStorage.getItem(BasketScript.StorageBasketKey);
 			if (basket == null){
 				return null;
 			}
 		   basket = JSON.parse(basket);
 
 		   const groupById = basket.reduce((acc, item) => {
-				   const existingIndex = acc.findIndex(el => el.productId === item.productId);
+				   const existingIndex = acc.findIndex(el => el.id === item.id);
 
 				   if (existingIndex > -1) {
-					   acc[existingIndex].count += 1;
+						acc[existingIndex].amount += 1;
 				   } else 
 				   {
 					   acc.push({
-						   productId: item.productId,
-						   productName: item.productName,
-						   count: 1
+						   id: item.id,
+						   name: item.name,
+						   amount: 1,
+						   cost: Number(item.cost)
 					   });
 				   };
 				   return acc;
 			   },
 			   []);
 
-		   return groupById.sort((first, second) => first.productName.localeCompare(second.productName));
+		   BasketScript.Backet = groupById.sort((first, second) => first.name.localeCompare(second.name));
+		   this.OnChangeBasketData();
+		   return BasketScript.Backet;
 		}
 	}
 </script>

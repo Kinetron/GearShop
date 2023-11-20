@@ -69,7 +69,7 @@ namespace GearShop.Services.Repository
                         Id = product.Id,
 				        Name = product.Name,
 				        Cost = product.RetailCost,
-				        Quantity = product.Rest
+				        Amount = product.Rest
 			        })
 		        .Skip((currentPage - 1) * itemsPerPage)
 		        .Take(itemsPerPage)

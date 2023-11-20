@@ -2091,7 +2091,7 @@
             colReorder: null,
             colResize: null,
             rowReorder: null,
-            cellEdit: null
+            cellEdit: null			
         },
 
         _create: function() {
