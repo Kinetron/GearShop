@@ -1,0 +1,124 @@
+﻿@using GearShop
+@using GearShop.Models
+@using Newtonsoft.Json
+@model List<GearShop.Models.Dto.Products.ProductDto>
+
+<style>
+	.padding {
+		padding: 5px;
+	}
+
+	.order-title {
+		padding: 10px;
+		font-weight: bold;
+		font-size: 1.5em;
+	}
+
+	#сreateOrderBlock {
+		padding: 5px 0 0 0;
+		text-align: right;
+	}
+</style>
+
+<div class="ui-grid ui-grid-responsive">
+	<div class="ui-grid-row padding order-title">
+		Оформление заказа на сумму: @ViewBag.TotalAmount Р.
+	</div>
+	<div class="ui-grid-row padding">
+		<div class="ui-grid-col-2">
+			Ваше имя
+		</div>
+		<div class="ui-grid-col-10">
+			<input id="buyerName" type="text"/>
+		</div>
+	</div>
+	<div class="ui-grid-row padding">
+		<div class="ui-grid-col-2">
+			Номер телефона
+		</div>
+		<div class="ui-grid-col-10">
+			<input id="buyerPhone" type="text"/>
+		</div>
+	</div>
+	<div class="ui-grid-row padding">
+		<div class="ui-grid-col-2">
+			Електронная почта
+		</div>
+		<div class="ui-grid-col-10">
+			<input id="buyerEmail" type="text"/>
+		</div>
+	</div>
+	<div class="ui-grid-row padding">
+		<div class="ui-grid-col-2">
+		</div>
+		<div class="ui-grid-col-10">
+			На почту прийдет письмо.
+		</div>
+	</div>
+</div>
+<div id="сreateOrderBlock">
+	<button id="btnCheckout" type="button">Оформить заказ</button>
+</div>
+<div id="tbProducts" style="margin-top:20px"></div>
+
+
+<div id="successDialog" title="Заказ">
+	<p>
+		<div id="successDialogText"></div>
+	</p>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	CreateOrderScript .Init();
+});
+
+const CreateOrderScript = {
+	Init() {
+		$('#buyerName').puiinputtext();
+		$('#buyerPhone').puiinputtext();
+		$('#buyerEmail').puiinputtext();
+
+		$('#btnCheckout').puibutton({
+				icon: 'fa-shopping-cart',
+				click: () => {
+					CreateOrderScript.CreateOrder();
+				}
+		});
+
+		$('#tbProducts').puidatatable({
+			caption: 'Состав заказа',
+			responsive: true,
+			columns: [
+				{ field: 'Name', headerText: 'Товар' },
+				{ field: 'Amount', headerText: 'Количество' },
+				{ field: 'Cost', headerText: 'Цена 1шт' },
+			],
+			datasource: this.data
+		});
+		
+		$('#successDialog').puidialog({
+			responsive: true
+		});
+	},
+	
+	data: @Html.Raw(JsonConvert.SerializeObject(Model)),
+	CreateOrder() {
+			$.ajax({
+				type: "POST",
+				url: '@Url.Action("CreateOrder", "Order")',
+				data: { model1: this.data },
+				dataType: "json",
+				error: function (error) {
+					console.log(error);
+				},
+				context: this,
+				success: function (response) {
+					$('#successDialogText')
+						.text(`Заказ № ${response} успешно создан. В ближайшее время с вями свяжуться. Запомните номер заказа(${response}).`);
+					$('#successDialog').puidialog('show');
+				}
+			});
+	}
+}
+</script>

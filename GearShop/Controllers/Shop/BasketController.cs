@@ -11,5 +11,14 @@ namespace GearShop.Controllers.Shop
 		{
 			return View();
 		}
+
+		/// <summary>
+		/// Оформить заказ.
+		/// </summary>
+		/// <returns></returns>
+		public IActionResult CreateOrder()
+		{
+			return RedirectToAction("CreateOrder", "Order");
+		}
 	}
 }
