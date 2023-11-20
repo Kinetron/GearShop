@@ -170,16 +170,13 @@ $(document).ready(function() {
 });
 
 	@*Купить товар.*@
-		function buy(productId, productName) {
+		function buy(productId, productName, cost, imageName) {
 		
 		$('#bay' + productId).text('В корзине');
 		$('#bay' + productId).addClass('in-basket');
 
-		$('#BasketLink').show();
-
-		let product = { productId: productId, productName: productName };
+			let product = { id: productId, name: productName, cost: cost, imageName: imageName };
 		BuyLogicScript.Basket.push(product);
-		console.log(BuyLogicScript.Basket);
 		BuyLogicScript.SaveBasketToLocal();
 		addMessage([{ severity: 'info', summary: 'Корзина', detail: `Товар ${productName} добавлен в корзину.` }]);
 }
@@ -194,9 +191,9 @@ function CreateProductCell(product) {
 						  </div>
 						  <div id="buy-block">
 								  <div class="price"> ${product.cost}&nbsp;₽</div>
-								<div>В наличии: ${product.quantity}</div>
+								<div>В наличии: ${product.amount}</div>
 								<div>
-									<button id="bay${product.id}" type="button" onClick="(buy(${product.id},'${product.name}'));"
+												<button id="buy${product.id}" type="button" onClick="(buy(${product.id}, '${product.name}', '${product.cost}', '${product.imageName}'));"
 												class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">Купить</button>
 								</div>					
 						 </div>
@@ -207,7 +204,6 @@ function CreateProductCell(product) {
 	$('#' + button).puibutton({
 		click: function(event) {
 			let id = product.id;
-			console.log(product.id);
 		}
 	});
 
@@ -217,12 +213,8 @@ function CreateProductCell(product) {
 @*Методы для работы UI интерфейса.*@
 const BuyUiScript = {
 	Init() {
-	@*Нажатие на «Корзина» в меню.*@
-		$('#BasketLink').click(function() {
-				console.log(895);
-		});
-	},
-}
+	}
+};
 
 @*Логика покупки товаров.*@
 const BuyLogicScript = {
@@ -288,7 +280,6 @@ const BuyLogicScript = {
 	@*Сохраняет корзину в локальное хранилище(на стороне клиента)*@
 	SaveBasketToLocal() {
 		localStorage.setItem(BuyLogicScript.StorageBasketKey, JSON.stringify(BuyLogicScript.Basket));
-		console.log(BuyLogicScript.Basket);
 	}
 }
 </script>

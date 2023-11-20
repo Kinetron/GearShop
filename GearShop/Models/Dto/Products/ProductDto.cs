@@ -12,7 +12,7 @@
         /// <summary>
         /// Количество.
         /// </summary>
-        public int? Quantity { get; set; }
+        public int? Amount { get; set; }
 
         /// <summary>
         /// Цена.
