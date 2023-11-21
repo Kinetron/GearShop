@@ -35,6 +35,9 @@
 					<li class="nav-item">
 						<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Authentication">Войти</a>
 					</li>
+					<li class="nav-item">
+							<a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="OrderList">Заказы</a>
+					</li>
 				</ul>
 			</div>
 		</div>
@@ -47,9 +50,10 @@
 <script src="~/primeui/primeui-all.js"></script>
 
 <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+	<main role="main" class="pb-3">
+		<div id="messageControl"></div>
+		@RenderBody()
+	</main>
     </div>
 
 <footer class="border-top footer text-muted">
@@ -60,3 +64,39 @@
 	@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	CommonScript.Init();
+});
+
+@*Общий набор функций для всех страниц.*@
+const CommonScript = {
+		Init() {
+			$('#messageControl').puigrowl(); @*Всплывающее сообщение*@
+		},
+
+		@*Отображает сообщение.*@
+		ShowMessage(type, title, message) {
+			const msg = ([{ severity: type, summary: title, detail: message }]);
+			$('#messageControl').puigrowl('show', msg);
+		},
+
+		StorageUserGuidKey: 'gearShopNoRegisterUserGuid',
+		StorageBasketKey: 'gearShopBasket',
+
+		@*Возвращает уникальный идентификатор для не зарегистрированного пользователя. Из хранилищя его браузера.*@
+		GetUserGuid() {
+			return localStorage.getItem(CommonScript.StorageUserGuidKey);
+		},
+
+		@*Конвертирует дату и время.*@
+		ConvertDateTimeToString(dateTime) {
+			const dt = new Date(dateTime);
+			const padL = (nr, len = 2, chr = `0`) => `${nr}`.padStart(2, chr);
+
+		  return `${padL(dt.getDate())}.${padL(dt.getMonth() + 1)}.${dt.getFullYear()} ${padL(dt.getHours())}:${
+				padL(dt.getMinutes())}:${padL(dt.getSeconds())}`;
+		}
+}
+</script>

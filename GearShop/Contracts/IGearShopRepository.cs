@@ -1,5 +1,6 @@
 ﻿//namespace GearShop.Contracts;
 
+using GearShop.Models;
 using GearShop.Models.Dto.Products;
 using GearShop.Models.Entities;
 
@@ -39,5 +40,21 @@ namespace GearShop.Contracts
 		/// <param name="guid"></param>
 		/// <returns></returns>
 		Task<bool> SynchronizeNoRegUserGuidAsync(string guid, string ipAddress);
+
+		/// <summary>
+		/// Создает заказ. Возвращает номер заказа.
+		/// </summary>
+		/// <param name="model"></param>
+		/// <param name="userGuid"></param>
+		/// <returns></returns>
+		Task<long> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string userGuid);
+
+		/// <summary>
+		/// Заказы пользователя.
+		/// </summary>
+		/// <param name="noRegUseGuid"></param>
+		/// <returns></returns>
+		Task<List<OrderDto>> GetOrderList(string noRegUseGuid);
+
     }
 }
