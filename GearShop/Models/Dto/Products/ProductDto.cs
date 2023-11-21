@@ -12,12 +12,12 @@
         /// <summary>
         /// Количество.
         /// </summary>
-        public int? Amount { get; set; }
+        public int Amount { get; set; }
 
         /// <summary>
         /// Цена.
         /// </summary>
-        public decimal? Cost { get; set; }
+        public decimal Cost { get; set; }
 
         /// <summary>
         /// Картинка товара.
