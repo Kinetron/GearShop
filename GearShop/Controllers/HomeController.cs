@@ -1,4 +1,5 @@
-﻿using GearShop.Models;
+﻿using GearShop.Contracts;
+using GearShop.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -7,14 +8,18 @@ namespace GearShop.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IGearShopRepository _gearShopRepository;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IGearShopRepository gearShopRepository)
         {
-            _logger = logger;
+	        _logger = logger;
+	        _gearShopRepository = gearShopRepository;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+	        var slaiderData = await _gearShopRepository.MainPageSlaiderDataAsync();
+	        ViewData["SlaiderData"] = slaiderData; 
             return View();
         }
 

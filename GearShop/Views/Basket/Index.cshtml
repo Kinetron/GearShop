@@ -133,6 +133,7 @@ const BasketScript = {
 				return null;
 			}
 		   basket = JSON.parse(basket);
+			
 
 		   const groupById = basket.reduce((acc, item) => {
 				   const existingIndex = acc.findIndex(el => el.id === item.id);

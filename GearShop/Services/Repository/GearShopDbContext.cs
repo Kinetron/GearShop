@@ -46,6 +46,12 @@ namespace GearShop.Services.Repository
 		/// </summary>
 		public DbSet<OrderInfo> OrderInfo { get; set; }
 
+		/// <summary>
+		/// Картинки продуктов.
+		/// </summary>
+		public DbSet<ProductImage> ProductImages { get; set; }
+		
+		public DbSet<SlaiderMainPage> SlaiderMainPage { get; set; }
 		public string GetUserGroupRole(string userName)
         {
            return this.Database.SqlQueryRaw<string>("SELECT [dbo].GetUserGroupRole(@userName) as value",

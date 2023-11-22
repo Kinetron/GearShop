@@ -35,9 +35,6 @@
 					<li class="nav-item">
 						<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Authentication">Войти</a>
 					</li>
-					<li class="nav-item">
-							<a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="OrderList">Заказы</a>
-					</li>
 				</ul>
 			</div>
 		</div>
@@ -77,26 +74,128 @@ const CommonScript = {
 		},
 
 		@*Отображает сообщение.*@
-		ShowMessage(type, title, message) {
+		showMessage(type, title, message) {
 			const msg = ([{ severity: type, summary: title, detail: message }]);
 			$('#messageControl').puigrowl('show', msg);
 		},
 
-		StorageUserGuidKey: 'gearShopNoRegisterUserGuid',
-		StorageBasketKey: 'gearShopBasket',
+		@*Ключ браузерного хранилища для  хранения уникального идентификатора
+			не зарегистрированного пользователя.
+		*@
+		_storageUserGuidKey: 'gearShopNoRegisterUserGuid',
+		@*Ключ корзины*@
+		_storageBasketKey: 'gearShopBasket',
+
+		@*Общая информация пользователя - имя, номер*@
+		_storageUserDataKey: 'gearShopUserData',
 
 		@*Возвращает уникальный идентификатор для не зарегистрированного пользователя. Из хранилищя его браузера.*@
-		GetUserGuid() {
-			return localStorage.getItem(CommonScript.StorageUserGuidKey);
+		getUserGuidFromStorage() {
+			return localStorage.getItem(CommonScript._storageUserGuidKey);
+		},
+
+		@*Сохраняет идентификатор не зарегистрированного пользователя в хранилище.*@
+		setUserGuidToStorage(guid) {
+			localStorage.setItem(CommonScript._storageUserGuidKey, guid);
+		},
+
+		@*Идентификатор пользователя.*@
+		userGuid: null,
+
+		@*Возвращает уникальный идентификатор для не зарегистрированного пользователя, в его браузере.*@
+		getUserGuid() {
+		if (this.userGuid != null) return this.userGuid;
+
+			let userGuid = CommonScript.getUserGuidFromStorage();
+			if (userGuid != null) {
+				CommonScript.userGuid = userGuid;
+				return userGuid;
+			}
+		
+			@*От сервера получаем новый идентификатор для не зарегистрированного пользователя.*@
+			$.ajax({
+				type: "GET",
+				url: '@Url.Action("GetGuidFoNoRegistered", "User")',
+				dataType: "json",
+				beforeSend: function() {
+				},
+				error: function(error) {
+					addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
+				},
+				success: function(response) {
+					CommonScript.setUserGuid(response.guid); @*Сохраняем в хранилище браузера пользователя*@
+					CommonScript.userGuid = response.guid;
+				
+					return response.guid;
+				}
+			});
+		},
+
+		@*Синхронизирует уникальный идентификатор не зарегистрированного пользователя на стороне браузера и guid на стороне сервера. *@
+		synchronizeNoRegUserGuid() {
+			let userGuid = this.getUserGuidFromStorage();
+			if (userGuid == null) return null;
+		
+			@* Возможно удаление идентификатора в БД, проверяем наличие.
+			  Если guid нет в БД – сервер его добавит.
+			*@
+			$.ajax({
+				type: "GET",
+				url: '@Url.Action("SynchronizeNoRegUserGuid", "User")',
+				data: {guid: userGuid},
+				beforeSend: function() {
+				},
+				error: function(error) {
+					addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
+				},
+				success: function(response) {
+				}
+			});
+		},
+
+		@*Корзина*@
+		basket: [],
+
+		clearBasket() {
+			this.basket = [];
+			this.setBasketToLocal();
+		},
+
+		@*Сохраняет корзину в локальное хранилище(на стороне клиента)*@
+		setBasketToLocal() {
+			localStorage.setItem(CommonScript._storageBasketKey, JSON.stringify(CommonScript.basket));
+		},
+
+		getBacketFromStorage() {
+			return localStorage.getItem(CommonScript._storageBasketKey);
+		},
+
+		@*Загружаетданные из хранилища если корзина пуста.*@
+		readLastBasketIfEmpty() {
+			if (CommonScript.basket.length == 0) {
+				this.basket = JSON.parse(this.getBacketFromStorage());
+			}
 		},
 
 		@*Конвертирует дату и время.*@
-		ConvertDateTimeToString(dateTime) {
+		convertDateTimeToString(dateTime) {
 			const dt = new Date(dateTime);
 			const padL = (nr, len = 2, chr = `0`) => `${nr}`.padStart(2, chr);
 
 		  return `${padL(dt.getDate())}.${padL(dt.getMonth() + 1)}.${dt.getFullYear()} ${padL(dt.getHours())}:${
 				padL(dt.getMinutes())}:${padL(dt.getSeconds())}`;
-		}
+		},
+
+		saveUserDataToStorage(data) {
+			localStorage.setItem(this._storageUserDataKey, JSON.stringify(data));
+		},
+
+		readUserDataFromStorage() {
+			const data = localStorage.getItem(this._storageUserDataKey);
+			if (data == null) return null;
+
+			return JSON.parse(data);
+		},
+	
 }
 </script>

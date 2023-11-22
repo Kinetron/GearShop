@@ -6,6 +6,11 @@ using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Internal;
+using DataParser.Models;
+using GearShop.Models.Dto;
+using OrderItemDto = GearShop.Models.OrderItemDto;
 
 namespace GearShop.Services.Repository
 {
@@ -51,31 +56,34 @@ namespace GearShop.Services.Repository
         {
             return _dbContext.GetUserGroupRole(userName);
         }
-
+		
         /// <summary>
         /// Получить список всех продуктов.
         /// </summary>
         /// <returns></returns>
         public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText)
         {
-	        IQueryable<Product> data = _dbContext.Products;
+	        var data = _dbContext.Products.Where(x=>x.Rest > 0);
 	        if (!string.IsNullOrEmpty(searchText))
 	        {
 		        data = data.Where(x => x.Name.Contains(searchText));
 	        }
 
-	        return data
-		        .Select(product =>
-			        new ProductDto()
-			        {
-                        Id = product.Id,
-				        Name = product.Name,
-				        Cost = product.RetailCost.Value,
-				        Amount = product.Rest.Value
-			        })
-		        .Skip((currentPage - 1) * itemsPerPage)
-		        .Take(itemsPerPage)
-		        .ToList();
+			//Переделать на нормальный sql, будет гораздо быстрее.
+
+			return data.Include(x=>x.ProductImage).Select(product =>
+				 new ProductDto()
+					{
+						Id = product.Id,
+						Name = product.Name,
+						Cost = product.RetailCost.Value,
+						Amount = product.Rest.Value,
+						ImageName = product.ProductImage == null ? "NoPhoto.png" : product.ProductImage.FileName
+					}
+				)
+				   .Skip((currentPage - 1) * itemsPerPage)
+				   .Take(itemsPerPage)
+				   .ToList();
         }
 
 		/// <summary>
@@ -84,13 +92,15 @@ namespace GearShop.Services.Repository
 		/// <returns></returns>
 		public int GetProductCount(string searchText)
         {
-	        if (string.IsNullOrEmpty(searchText))
+			var data = _dbContext.Products.Where(x => x.Rest > 0);
+
+			if (string.IsNullOrEmpty(searchText))
 	        {
-		        return _dbContext.Products.Count();
+		        return data.Count();
 			}
 	        else
 	        {
-				return _dbContext.Products.Where(x=>x.Name.Contains(searchText)).Count();
+				return data.Where(x=>x.Name.Contains(searchText)).Count();
 			}
         }
 
@@ -258,6 +268,20 @@ namespace GearShop.Services.Repository
 			}
 
 			return await Task.FromResult(orderTree);
+		}
+
+		/// <summary>
+		/// Данные для отображения слайдера на главной странице.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<List<SlaiderMainPageDto>> MainPageSlaiderDataAsync()
+		{
+			return await _dbContext.SlaiderMainPage.Select(data => new SlaiderMainPageDto()
+			{
+				Title = data.Title,
+				Description = data.Description,
+				FileName = data.FileName
+			}).ToListAsync();
 		}
     }
 }

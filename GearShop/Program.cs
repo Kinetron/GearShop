@@ -13,7 +13,7 @@ namespace GearShop
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+			var builder = WebApplication.CreateBuilder(args);
             var config = builder.Configuration;
 
             builder.Services.AddAuthentication(x =>

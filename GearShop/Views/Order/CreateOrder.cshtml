@@ -68,11 +68,11 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
-	CreateOrderScript .Init();
+	CreateOrderScript.init();
 });
 
 const CreateOrderScript = {
-	Init() {
+	init() {
 		$('#buyerName').puiinputtext();
 		$('#buyerPhone').puiinputtext();
 		$('#buyerEmail').puiinputtext();
@@ -80,7 +80,7 @@ const CreateOrderScript = {
 		$('#btnCheckout').puibutton({
 				icon: 'fa-shopping-cart',
 				click: () => {
-					CreateOrderScript.CreateOrder();
+					CreateOrderScript.createOrder();
 				}
 		});
 
@@ -100,6 +100,14 @@ const CreateOrderScript = {
 		});
 
 		$('#errorMessageControl').puimessages();
+
+		@*Сохраненный данные для компонентов ввода*@
+		const userData = CommonScript.readUserDataFromStorage();
+		if (userData != null) {
+			$('#buyerName').val(userData.BuyerName);
+			$('#buyerPhone').val(userData.BuyerPhone);
+			$('#buyerEmail').val(userData.BuyerEmail);
+		}
 	},
 
 	ShowError(text) {
@@ -128,8 +136,10 @@ const CreateOrderScript = {
 		return true;
 	},
 	data: @Html.Raw(JsonConvert.SerializeObject(Model)),
-	CreateOrder() {
+	createOrder() {
 			if (!this.СheckInputData()) return;
+			CommonScript.synchronizeNoRegUserGuid(); @*Идентификатор не зарегистрированного пользователя*@
+
 			const orderInfo = 
 			{
 				BuyerName: $('#buyerName').val(),
@@ -140,15 +150,15 @@ const CreateOrderScript = {
 			$.ajax({
 				type: "POST",
 				url: '@Url.Action("CreateOrder", "Order")',
-			data: { model: this.data, orderInfo: orderInfo, userGuid: CommonScript.GetUserGuid() },
+				data: { model: this.data, orderInfo: orderInfo, userGuid: CommonScript.getUserGuid() },
 				dataType: "json",
 				error: function(error) {
 					CommonScript.ShowMessage('error', 'Ошибка', 'Ошибка сохранения заказа.');
 				},
 				success: function(response) {
-					console.log(response);
-					const orderId = 1;
-				window.location = '@Url.Action("SuccessfulСreation", "Order")?' + $.param({ orderId: response });
+					CommonScript.saveUserDataToStorage(orderInfo);
+					CommonScript.clearBasket();
+					window.location = '@Url.Action("SuccessfulСreation", "Order")?' + $.param({ orderId: response });
 				}
 			});
 	}
