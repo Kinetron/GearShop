@@ -18,7 +18,7 @@ const OrderListScript = {
 					{ field: 'quantity', headerText: 'Количество' },
 					{ field: 'amount', headerText: 'Цена 1шт' },
 					{ field: 'created', headerText: 'Дата заказа', content: (rowData) => {
-						return CommonScript.ConvertDateTimeToString(rowData.created); 
+						return CommonScript.convertDateTimeToString(rowData.created); 
 					} },
 					{ field: 'orderStatus', headerText: 'Статус' },
 					{ field: 'totalSum', headerText: 'Сумма' },

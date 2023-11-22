@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GearShop.Models.Entities;
 
@@ -17,7 +18,7 @@ public class Product
 
     public int? Rest { get; set; }
 
-    public string? ImageName { get; set; }
+	public string? ImageName { get; set; }
 
     public string? Available { get; set; }
 
@@ -30,4 +31,8 @@ public class Product
     public DateTime? Changed { get; set; }
 
     public string? Changer { get; set; }
+
+    public long? ProductImageId { get; set; }
+
+	public ProductImage ProductImage { get; set; }
 }

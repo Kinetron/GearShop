@@ -22,6 +22,6 @@
         /// <summary>
         /// Картинка товара.
         /// </summary>
-        public string ImageName { get; set; } = "Audi.gif";
+        public string ImageName { get; set; } = "NoPhoto.png";
     }
 }

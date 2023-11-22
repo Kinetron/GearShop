@@ -1,6 +1,7 @@
 ﻿//namespace GearShop.Contracts;
 
 using GearShop.Models;
+using GearShop.Models.Dto;
 using GearShop.Models.Dto.Products;
 using GearShop.Models.Entities;
 
@@ -56,5 +57,10 @@ namespace GearShop.Contracts
 		/// <returns></returns>
 		Task<List<OrderDto>> GetOrderList(string noRegUseGuid);
 
+        /// <summary>
+        /// Данные для отображения слайдера на главной странице.
+        /// </summary>
+        /// <returns></returns>
+		Task<List<SlaiderMainPageDto>> MainPageSlaiderDataAsync();
     }
 }

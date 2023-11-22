@@ -1,4 +1,5 @@
-﻿@{
+﻿@*Страница выбора продуктов.*@
+@{
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <style>
@@ -60,7 +61,6 @@
 	<div class="searchPanel">
 		<input id="searchInput" type="text"/>
 		<button id="searchButton" type="button">Поиск</button>
-		<div id="messageControl"></div>
 	</div>
 	<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
 	<div id="tbProductList"></div>
@@ -71,11 +71,82 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
-	BuyLogicScript.SynchronizeNoRegUserGuid(); 
-	BuyUiScript.Init();
+	ShowcaseScript.init();
+});
 
+@*Витрина магазина.*@
+const ShowcaseScript = {
+	firstPageIndex: 1,
+
+	currentPage: 1,
+	
+	searchText: '',
+	
+	searchParam() {
+			return { currentPage: this.currentPage, searchText: this.searchText };
+	},
+	
+	setCurrentPage(page) {
+		this.currentPage = page;
+	},
+		
+	init() {
+
+		$('#mainPanel').puipanel();
+		$('#searchInput').puiinputtext();
+
+		$('#tbProductList').puidatagrid({
+			header: 'Список товаров',
+			datasource: function(callback) {
+				$.ajax({
+					type: "GET",
+					url: '@Url.Action("GetProductList", "ProductList")',
+					data: ShowcaseScript.searchParam(),
+					dataType: "json",
+					beforeSend: function() {
+						$('#loaderIndicator').show();
+					},
+					error: function(error) {
+						$('#loaderIndicator').hide();
+
+						CommonScript.showMessage('error', 'Ошибка', 'Ошибка получения данных.');
+					},
+					context: this,
+					success: function(response) {
+						$('#loaderIndicator').hide();
+						callback.call(this, response);
+					}
+				});
+			},
+			content: function(product) {
+				return ShowcaseScript.createProductCell(product);
+			}
+		});
+
+		$('#searchButton').puibutton({
+			click: function(event) {
+				ShowcaseScript.searchByText($('#searchInput').val());
+			}
+		});
+
+		$("#searchInput").on('keyup', function (e) {
+			if (e.key === 'Enter' || e.keyCode === 13) {
+				ShowcaseScript.searchByText($('#searchInput').val());
+			}
+		});
+
+		$('#productsPaginator').puipaginator({
+			paginate: function(event, state) {
+				ShowcaseScript.setCurrentPage(state.page + 1);
+				$('#tbProductList').puidatagrid('reload');
+			}
+		});
+
+		this.updatePaginator(this.searchText);
+	},
+	
 	@*Обновляет данные пейдженатора-количество строк и страниц.*@
-	function UpdatePaginator(searchText) {
+	updatePaginator(searchText) {
 		$.ajax({
 			type: "GET",
 			url: '/ProductList/GetPaginateData',
@@ -95,191 +166,53 @@ $(document).ready(function() {
 				$('#productsPaginator').puipaginator('setState', { totalRecords: response.totalRecords, page:0 });
 			}
 		});
-	}
-
-	function UpdateData(searchText) {
-		$('#tbProductList').puidatagrid('reload');
-		UpdatePaginator(searchText);
-	}
-
-	function GetFirstPageIndex() {
-		return 1;
-	}
-
-	$('#mainPanel').puipanel();
-	$('#searchInput').puiinputtext();
-	$('#messageControl').puigrowl(); @*Всплывающее сообщение*@
-	addMessage = function(msg) {
-		$('#messageControl').puigrowl('show', msg);
-	};
-
-	let currentPage = GetFirstPageIndex();
-		let searchText = '';
-
-		$('#searchButton').puibutton({
-			click: function(event) {
-				searchText = $('#searchInput').val();
-				UpdateData(searchText);
-				currentPage = GetFirstPageIndex();
-			}
-		});
-
-		$("#searchInput").on('keyup', function (e) {
-		if (e.key === 'Enter' || e.keyCode === 13) {
-			searchText = $('#searchInput').val();
-			UpdateData(searchText);
-			currentPage = GetFirstPageIndex();
-		}
-	});
+	},
 	
-	$('#productsPaginator').puipaginator({
-			paginate: function(event, state) {
-				currentPage = state.page + 1;
-				$('#tbProductList').puidatagrid('reload');
-			}
-		});
-		
-		UpdatePaginator(searchText);
+	@*Поиск по названию товара. like*@
+	searchByText(text) {
+		ShowcaseScript.currentPage = 1;
+		ShowcaseScript.searchText = text;
+		ShowcaseScript.updateProductList();
+	},
 
-		$('#tbProductList').puidatagrid({
-			header: 'Список товаров',
-			datasource: function(callback) {
-				$.ajax({
-					type: "GET",
-					url: '@Url.Action("GetProductList", "ProductList")',
-					data: { currentPage: currentPage, searchText: searchText },
-					dataType: "json",
-					beforeSend: function() {
-						$('#loaderIndicator').show();
-					},
-					error: function(error) {
-						$('#loaderIndicator').hide();
-						addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
-					},
-					context: this,
-					success: function(response) {
-						$('#loaderIndicator').hide();
-						callback.call(this, response);
-					}
-				});
-			},
-			content: function (product) {
-				return CreateProductCell(product);
-			}
-		});
-});
+	updateProductList() {
+		$('#tbProductList').puidatagrid('reload');
+		this.updatePaginator(this.searchText);
+	},
 
 	@*Купить товар.*@
-		function buy(productId, productName, cost, imageName) {
+	buy(productId, productName, cost, imageName) {
 		
 		$('#bay' + productId).text('В корзине');
 		$('#bay' + productId).addClass('in-basket');
 
-			let product = { id: productId, name: productName, cost: cost, imageName: imageName };
-		BuyLogicScript.Basket.push(product);
-		BuyLogicScript.SaveBasketToLocal();
-		addMessage([{ severity: 'info', summary: 'Корзина', detail: `Товар ${productName} добавлен в корзину.` }]);
-}
+		let product = { id: productId, name: productName, cost: cost, imageName: imageName };
+		CommonScript.readLastBasketIfEmpty(); @*Если перейти в магазин корзина очистится – считываем сохраненное значение(если не корзина пуста).*@
+		CommonScript.basket.push(product);
+		CommonScript.setBasketToLocal();
 
-@*Переделать на шаблоны.*@
-function CreateProductCell(product) {
-	@*переделать на шаблон!!!*@
-	let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
+		CommonScript.showMessage('info', 'Корзина', `Товар ${productName} добавлен в корзину.`);
+	},
+
+	@*html отображаемой ячейки.*@
+	createProductCell(product) {
+		@*переделать на шаблон!!!*@
+		let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
 						  <div class="product-info">
-							<img align="left" src="/images/${product.imageName}" class="image">
+								<img align="left" src="/productImages/${product.imageName}" class="image">
 							<div>${product.name}</div>									
 						  </div>
 						  <div id="buy-block">
 								  <div class="price"> ${product.cost}&nbsp;₽</div>
 								<div>В наличии: ${product.amount}</div>
 								<div>
-												<button id="buy${product.id}" type="button" onClick="(buy(${product.id}, '${product.name}', '${product.cost}', '${product.imageName}'));"
-												class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">Купить</button>
+									<button id="buy${product.id}" type="button" onClick="(ShowcaseScript.buy(${product.id}, '${product.name}', '${product.cost}', '${product.imageName}'));"
+									class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">Купить</button>
 								</div>					
 						 </div>
 					</div>`;
 
-	let button = `bay${product.id}`;
-	//console.log(button);
-	$('#' + button).puibutton({
-		click: function(event) {
-			let id = product.id;
-		}
-	});
-
-	return html;
-}
-
-@*Методы для работы UI интерфейса.*@
-const BuyUiScript = {
-	Init() {
-	}
-};
-
-@*Логика покупки товаров.*@
-const BuyLogicScript = {
-	@*Ключ браузерного хранилища для  хранения уникального идентификатора
-		не зарегистрированного пользователя.
-	*@
-	StorageUserGuidKey: 'gearShopNoRegisterUserGuid',
-	StorageBasketKey: 'gearShopBasket',
-	UserGuid: null,
-
-	@*Возвращает уникальный идентификатор для не зарегистрированного пользователя, в его браузере.*@
-	GetUserGuid() {
-		if (BuyLogicScript.UserGuid != null) return BuyLogicScript.UserGuid;
-
-		let userGuid = localStorage.getItem(BuyLogicScript.StorageUserGuidKey);
-		if (userGuid != null) {
-			BuyLogicScript.UserGuid = userGuid;
-			return userGuid;
-		}
-	
-		@*От сервера получаем новый идентификатор для не зарегистрированного пользователя.*@
-		$.ajax({
-			type: "GET",
-			url: '@Url.Action("GetGuidFoNoRegistered", "User")',
-			dataType: "json",
-			beforeSend: function() {
-			},
-			error: function(error) {
-				addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
-			},
-			success: function(response) {
-				localStorage.setItem(BuyLogicScript.StorageUserGuidKey, response.guid); @*Сохраняем в хранилище браузера пользователя*@
-				BuyLogicScript.UserGuid = response.guid;
-				
-				return response.guid;
-			}
-		});
-	},
-	@*Синхронизирует уникальный идентификатор не зарегистрированного пользователя на стороне браузера и guid на стороне сервера. *@
-	SynchronizeNoRegUserGuid() {
-		let userGuid = localStorage.getItem(BuyLogicScript.StorageUserGuidKey);
-		if (userGuid == null) return null;
-		
-	@* Возможно удаление идентификатора в БД, проверяем наличие.
-	   Если guid нет в БД – сервер его добавит.
-	*@
-		$.ajax({
-			type: "GET",
-			url: '@Url.Action("SynchronizeNoRegUserGuid", "User")',
-			data: {guid: userGuid},
-			beforeSend: function() {
-			},
-			error: function(error) {
-				addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
-			},
-			success: function(response) {
-			}
-		});
-	},
-	@*Корзина*@
-	Basket: [],
-
-	@*Сохраняет корзину в локальное хранилище(на стороне клиента)*@
-	SaveBasketToLocal() {
-		localStorage.setItem(BuyLogicScript.StorageBasketKey, JSON.stringify(BuyLogicScript.Basket));
+		return html;
 	}
 }
 </script>
