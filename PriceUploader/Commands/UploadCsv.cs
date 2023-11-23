@@ -13,6 +13,7 @@ using DataParser.Models.Products;
 using DataParser.Services;
 using PriceUploader.Contracts;
 using PriceUploader.Services;
+using static System.Net.WebRequestMethods;
 
 namespace PriceUploader.Commands
 {
@@ -62,7 +63,11 @@ namespace PriceUploader.Commands
 
 			_sendTextToUser($"Загрузка файла на сервер...{Environment.NewLine}");
             FileUploader fileUploader = new FileUploader();
-            HttpResponseMessage answer = fileUploader.Upload("https://localhost:44342/LoadProductList/UploadCsv", 
+			//https://localhost:44342/LoadProductList/UploadCsv
+			//string url = "http://autolugansk.ru/LoadProductList/UploadCsv";
+
+			string url = "https://localhost:44342/LoadProductList/UploadCsv";
+			HttpResponseMessage answer = fileUploader.Upload(url, 
 	            files[0], "UploaderMan898qw", "IpYNrGy5M2TP4eewVdDcII8lOVrHVn2g3c7R5HXHnmPz").Result;
 
             if (answer.StatusCode != HttpStatusCode.OK)

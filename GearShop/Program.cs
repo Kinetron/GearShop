@@ -1,4 +1,5 @@
 using System.Text;
+using Azure.Core;
 using GearShop.Contracts;
 using GearShop.Services;
 using GearShop.Services.Repository;
@@ -44,6 +45,18 @@ namespace GearShop
                     ValidateAudience = false,
                 };
             });
+
+            builder.Services.AddSingleton<IEMailNotifier, EMailNotifier>(x=> 
+	            new EMailNotifier(config["EmailNotifier:senderEmail"],
+		            config["EmailNotifier:senderPassword"],
+		            config["EmailNotifier:companyName"]));
+
+			// var services = _serviceCollection.BuildServiceProvider().GetServices<IDomainHandler<TEvent>>();
+
+
+			builder.Services.AddSingleton<INotifier, Notifier>(x =>
+	            new Notifier(config["EmailNotifier:managerEmail"], 
+		            builder.Services.BuildServiceProvider().GetService<IEMailNotifier>()));
 
             builder.Services.AddSingleton<IFileStorage>(x=>new FileStorage("Upload\\Files"));
             builder.Services.AddScoped<IIdentityService>(x => 

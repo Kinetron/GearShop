@@ -10,11 +10,13 @@ namespace GearShop.Controllers
 	{
 		private readonly IFileStorage _fileStorage;
 		private readonly IDataSynchronizer _dataSynchronizer;
+		private readonly IIdentityService _identityService;
 
-		public LoadProductListController(IFileStorage fileStorage, IDataSynchronizer dataSynchronizer)
+		public LoadProductListController(IFileStorage fileStorage, IDataSynchronizer dataSynchronizer, IIdentityService identityService)
 		{
 			_fileStorage = fileStorage;
 			_dataSynchronizer = dataSynchronizer;
+			_identityService = identityService;
 		}
 
 		/// <summary>
@@ -27,8 +29,7 @@ namespace GearShop.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UploadCsv(IFormFile file, string userName, string password)
 		{
-			//Добавить авторизацию через бд.
-			if (userName != "UploaderMan898qw" || password != "IpYNrGy5M2TP4eewVdDcII8lOVrHVn2g3c7R5HXHnmPz")
+			if(!_identityService.IsValidUser(userName, password))
 			{
 				return StatusCode(401);
 			}
@@ -42,8 +43,8 @@ namespace GearShop.Controllers
 			{
 				return StatusCode(507);
 			}
-				return Ok("dsddss");
-			//return BadRequest("zzzzzz45");
+			
+			return Ok("dsddss");
 		}
 	}
 }

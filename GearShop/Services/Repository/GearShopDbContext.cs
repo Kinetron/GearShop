@@ -52,6 +52,12 @@ namespace GearShop.Services.Repository
 		public DbSet<ProductImage> ProductImages { get; set; }
 		
 		public DbSet<SlaiderMainPage> SlaiderMainPage { get; set; }
+
+		/// <summary>
+		/// Хранит информацию о процессе синхронизации данных. Для прогресс бара.
+		/// </summary>
+		//public DbSet<PriceSynchronizeStatus> PriceSynchronizeStatus { get; set; }
+		
 		public string GetUserGroupRole(string userName)
         {
            return this.Database.SqlQueryRaw<string>("SELECT [dbo].GetUserGroupRole(@userName) as value",
@@ -88,6 +94,8 @@ namespace GearShop.Services.Repository
 					tb.HasTrigger("tr_OrderItems_LogUpd");
 				});
 			});
+
+			//modelBuilder.Entity<PriceSynchronizeStatus>(builder => { builder.HasNoKey(); });
 		}
     }
 }

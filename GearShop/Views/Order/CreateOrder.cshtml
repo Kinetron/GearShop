@@ -57,7 +57,7 @@
 		<div class="ui-grid-col-2">
 		</div>
 		<div class="ui-grid-col-10">
-			На почту прийдет письмо.
+			На почту прийдет письмо
 		</div>
 	</div>
 </div>
@@ -108,6 +108,9 @@ const CreateOrderScript = {
 			$('#buyerPhone').val(userData.BuyerPhone);
 			$('#buyerEmail').val(userData.BuyerEmail);
 		}
+
+		CommonScript.synchronizeNoRegUserGuid(); @*Идентификатор не зарегистрированного пользователя*@
+		CommonScript.getUserGuid(); @*Создаст новый идентификатор для не зарегистрированного пользователя.*@
 	},
 
 	ShowError(text) {
@@ -138,7 +141,6 @@ const CreateOrderScript = {
 	data: @Html.Raw(JsonConvert.SerializeObject(Model)),
 	createOrder() {
 			if (!this.СheckInputData()) return;
-			CommonScript.synchronizeNoRegUserGuid(); @*Идентификатор не зарегистрированного пользователя*@
 
 			const orderInfo = 
 			{
@@ -153,7 +155,7 @@ const CreateOrderScript = {
 				data: { model: this.data, orderInfo: orderInfo, userGuid: CommonScript.getUserGuid() },
 				dataType: "json",
 				error: function(error) {
-					CommonScript.ShowMessage('error', 'Ошибка', 'Ошибка сохранения заказа.');
+					CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения заказа.');
 				},
 				success: function(response) {
 					CommonScript.saveUserDataToStorage(orderInfo);

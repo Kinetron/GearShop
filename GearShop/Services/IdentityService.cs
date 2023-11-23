@@ -59,26 +59,37 @@ namespace GearShop.Services
         /// <returns></returns>
         public string Login(string userName, string password)
         {
-            //Проверка наличия пользователя в БД, получение хэшсоли для его пароля.
-            string dbHashSalt = _repository.GetUserHashSalt(userName);
-
-            if (dbHashSalt == null)
-            {
-                LastError = "Неверное имя пользователя или пароль.";   
-                return null;
-            }
-
-            //Неверный пароль.
-            if (!BCrypt.Net.BCrypt.Verify(password, dbHashSalt))
-            {
-                LastError = "Неверное имя пользователя или пароль.";
-                return null;
-            }
+	        if (!IsValidUser(userName, password)) return null;
 
             //Получение роли.
             string role = _repository.GetUserGroupCode(userName);
 
             return CreateToken(userName, role);
+        }
+
+		/// <summary>
+		/// Проверяет существование пользователя.
+		/// </summary>
+		/// <returns></returns>
+		public bool IsValidUser(string userName, string password)
+        {
+	        //Проверка наличия пользователя в БД, получение хэшсоли для его пароля.
+	        string dbHashSalt = _repository.GetUserHashSalt(userName);
+
+	        if (dbHashSalt == null)
+	        {
+		        LastError = "Неверное имя пользователя или пароль.";
+		        return false;
+	        }
+
+	        //Неверный пароль.
+	        if (!BCrypt.Net.BCrypt.Verify(password, dbHashSalt))
+	        {
+		        LastError = "Неверное имя пользователя или пароль.";
+		        return false;
+	        }
+
+			return true;
         }
 
         //public void Register(UserDto request)

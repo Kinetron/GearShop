@@ -6,5 +6,7 @@
         public string Name { get; set; }
 
         public string HashSalt { get; set; }
+
+        public int Deleted { get; set; }
     }
 }

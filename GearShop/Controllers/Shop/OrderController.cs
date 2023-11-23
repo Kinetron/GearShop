@@ -14,10 +14,12 @@ namespace GearShop.Controllers.Shop
 	public class OrderController : Controller
 	{
 		private readonly IGearShopRepository _repository;
+		private readonly INotifier _notifier;
 
-		public OrderController(IGearShopRepository repository)
+		public OrderController(IGearShopRepository repository, INotifier notifier)
 		{
 			_repository = repository;
+			_notifier = notifier;
 		}
 
 		/// <summary>
@@ -50,6 +52,7 @@ namespace GearShop.Controllers.Shop
 				return BadRequest();
 			}
 
+			_notifier.NewOrder(model, orderInfo, orderNumber); //Уведомляем о новом заказе.
 			return Ok(orderNumber);
 		}
 

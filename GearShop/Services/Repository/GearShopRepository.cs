@@ -33,7 +33,7 @@ namespace GearShop.Services.Repository
         /// <returns></returns>
         public string GetUserHashSalt(string userName)
         {
-            return _dbContext.Users.FirstOrDefault(u => u.Name == userName)?.HashSalt;
+            return _dbContext.Users.FirstOrDefault(u => u.Name == userName && u.Deleted == 0)?.HashSalt;
         }
         
         /// <summary>
@@ -63,7 +63,7 @@ namespace GearShop.Services.Repository
         /// <returns></returns>
         public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText)
         {
-	        var data = _dbContext.Products.Where(x=>x.Rest > 0);
+	        var data = _dbContext.Products.Where(x=>x.Rest > 0 && x.Deleted == 0);
 	        if (!string.IsNullOrEmpty(searchText))
 	        {
 		        data = data.Where(x => x.Name.Contains(searchText));
@@ -92,7 +92,7 @@ namespace GearShop.Services.Repository
 		/// <returns></returns>
 		public int GetProductCount(string searchText)
         {
-			var data = _dbContext.Products.Where(x => x.Rest > 0);
+			var data = _dbContext.Products.Where(x => x.Rest > 0 && x.Deleted == 0);
 
 			if (string.IsNullOrEmpty(searchText))
 	        {

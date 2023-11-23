@@ -8,7 +8,6 @@
 	<link rel="stylesheet" type="text/css" href="~/font-awesome-4.7.0/css/font-awesome.css">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/GearShop.styles.css" asp-append-version="true" />
     <link rel="stylesheet" type="text/css" href="~/primeui/themes/aristo/theme.css">
     <link href="~/primeui/primeui-all.css" rel="stylesheet" type="text/css" />
 </head>
@@ -95,7 +94,7 @@ const CommonScript = {
 		},
 
 		@*Сохраняет идентификатор не зарегистрированного пользователя в хранилище.*@
-		setUserGuidToStorage(guid) {
+		saveUserGuidToStorage(guid) {
 			localStorage.setItem(CommonScript._storageUserGuidKey, guid);
 		},
 
@@ -123,7 +122,7 @@ const CommonScript = {
 					addMessage([{ severity: 'error', summary: 'Ошибка', detail: 'Ошибка получения данных.' }]);
 				},
 				success: function(response) {
-					CommonScript.setUserGuid(response.guid); @*Сохраняем в хранилище браузера пользователя*@
+					CommonScript.saveUserGuidToStorage(response.guid); @*Сохраняем в хранилище браузера пользователя*@
 					CommonScript.userGuid = response.guid;
 				
 					return response.guid;
@@ -134,7 +133,7 @@ const CommonScript = {
 		@*Синхронизирует уникальный идентификатор не зарегистрированного пользователя на стороне браузера и guid на стороне сервера. *@
 		synchronizeNoRegUserGuid() {
 			let userGuid = this.getUserGuidFromStorage();
-			if (userGuid == null) return null;
+			if (userGuid != null) return;
 		
 			@* Возможно удаление идентификатора в БД, проверяем наличие.
 			  Если guid нет в БД – сервер его добавит.
@@ -173,7 +172,9 @@ const CommonScript = {
 		@*Загружаетданные из хранилища если корзина пуста.*@
 		readLastBasketIfEmpty() {
 			if (CommonScript.basket.length == 0) {
-				this.basket = JSON.parse(this.getBacketFromStorage());
+				const basket = JSON.parse(this.getBacketFromStorage());
+				if (basket == null) return;
+				this.basket = basket;
 			}
 		},
 

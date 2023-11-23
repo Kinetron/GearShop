@@ -58,16 +58,36 @@
 </style>
 
 <div id="mainPanel">
-	<div class="searchPanel">
-		<input id="searchInput" type="text"/>
-		<button id="searchButton" type="button">Поиск</button>
+	<div class="ui-grid">
+		<div class="ui-grid-row">
+			<div class="ui-grid-col-2">
+				<ul id="pm1">
+					<li><h3>Товары</h3></li>
+					<li><a>Все товары</a></li>
+				</ul>
+			</div>
+			<div class="ui-grid-col-10">
+			</div>
+		</div>
+		<div class="ui-grid-row">
+			<div class="ui-grid-col-2">
+			
+			</div>
+			<div class="ui-grid-col-10">
+				<div class="searchPanel">
+					<input id="searchInput" type="text"/>
+					<button id="searchButton" type="button">Поиск</button>
+				</div>
+				<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
+				<div id="tbProductList"></div>
+				<div id="productsPaginator"></div>
+				<label id="recordCountInfo"></label>
+				<div id="localgrid"></div>
+			</div>
+		</div>
 	</div>
-	<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
-	<div id="tbProductList"></div>
-	<div id="productsPaginator"></div>
-	<label id="recordCountInfo"></label>
-	<div id="localgrid"></div>
 </div>
+
 
 <script type="text/javascript">
 $(document).ready(function() {
@@ -91,7 +111,7 @@ const ShowcaseScript = {
 	},
 		
 	init() {
-
+			$('#pm1').puimenu();
 		$('#mainPanel').puipanel();
 		$('#searchInput').puiinputtext();
 
