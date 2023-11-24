@@ -61,9 +61,15 @@ namespace GearShop.Services.Repository
         /// Получить список всех продуктов.
         /// </summary>
         /// <returns></returns>
-        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText)
+        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId)
         {
 	        var data = _dbContext.Products.Where(x=>x.Rest > 0 && x.Deleted == 0);
+
+	        if (productTypeId > 0)
+	        {
+		        data = data.Where(x=>x.ProductTypeId == productTypeId);
+	        }
+			
 	        if (!string.IsNullOrEmpty(searchText))
 	        {
 		        data = data.Where(x => x.Name.Contains(searchText));
@@ -71,14 +77,14 @@ namespace GearShop.Services.Repository
 
 			//Переделать на нормальный sql, будет гораздо быстрее.
 
-			return data.Include(x=>x.ProductImage).Select(product =>
+			return data.Select(product =>
 				 new ProductDto()
 					{
 						Id = product.Id,
 						Name = product.Name,
 						Cost = product.RetailCost.Value,
 						Amount = product.Rest.Value,
-						ImageName = product.ProductImage == null ? "NoPhoto.png" : product.ProductImage.FileName
+						ImageName = string.IsNullOrEmpty(product.ImageName) ? "NoPhoto.png" : product.ImageName
 					}
 				)
 				   .Skip((currentPage - 1) * itemsPerPage)
@@ -90,9 +96,13 @@ namespace GearShop.Services.Repository
 		/// Возвращает количество продуктов.
 		/// </summary>
 		/// <returns></returns>
-		public int GetProductCount(string searchText)
+		public int GetProductCount(string searchText, int productTypeId)
         {
 			var data = _dbContext.Products.Where(x => x.Rest > 0 && x.Deleted == 0);
+			if (productTypeId > 0)
+			{
+				data = data.Where(x => x.ProductTypeId == productTypeId);
+			}
 
 			if (string.IsNullOrEmpty(searchText))
 	        {
@@ -282,6 +292,15 @@ namespace GearShop.Services.Repository
 				Description = data.Description,
 				FileName = data.FileName
 			}).ToListAsync();
+		}
+
+		/// <summary>
+		/// Возвращает список продуктов.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<List<ProductType>> GetProductTypesAsync()
+		{
+			return await _dbContext.ProductTypes.ToListAsync();
 		}
     }
 }

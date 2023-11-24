@@ -21,22 +21,24 @@ namespace GearShop.Controllers.Shop
 
         // GET: ProductListController
         public ActionResult Index()
-        {
-            return View();
+		{
+			ViewData["ProductTypes"] = _gearShopRepository.GetProductTypesAsync().Result
+				.Select(x=>new KeyValuePair<int, string>(x.Id, x.Name)).ToList();
+			return View();
         }
 
-        public JsonResult GetProductList(int currentPage, string searchText)
+        public JsonResult GetProductList(int currentPage, string searchText, int productTypeId)
         {
-	        return Json(_gearShopRepository.GetProducts(currentPage, recordPerPage, searchText));
+	        return Json(_gearShopRepository.GetProducts(currentPage, recordPerPage, searchText, productTypeId));
         }
 
         /// <summary>
         /// Получает параметры пейдженации страниц.
         /// </summary>
         /// <returns></returns>
-        public JsonResult GetPaginateData(string searchText)
+        public JsonResult GetPaginateData(string searchText, int productTypeId)
         {
-	        int totalRecords = _gearShopRepository.GetProductCount(searchText);
+	        int totalRecords = _gearShopRepository.GetProductCount(searchText, productTypeId);
             int rows = totalRecords / recordPerPage;
 
 	        return Json(new {rows = rows, totalRecords = totalRecords});

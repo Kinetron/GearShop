@@ -27,13 +27,13 @@ namespace GearShop.Contracts
         /// Получить список всех продуктов.
         /// </summary>
         /// <returns></returns>
-        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText);
+        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId);
 
         /// <summary>
         /// Возвращает количество продуктов.
         /// </summary>
         /// <returns></returns>
-        int GetProductCount(string searchText);
+        int GetProductCount(string searchText, int productTypeId);
 
 		/// <summary>
 		/// Проверяет наличие guid в БД. Если нет – добавляет новую запись.
@@ -62,5 +62,11 @@ namespace GearShop.Contracts
         /// </summary>
         /// <returns></returns>
 		Task<List<SlaiderMainPageDto>> MainPageSlaiderDataAsync();
-    }
+
+        /// <summary>
+        /// Возвращает список продуктов.
+        /// </summary>
+        /// <returns></returns>
+        Task<List<ProductType>> GetProductTypesAsync();
+	}
 }

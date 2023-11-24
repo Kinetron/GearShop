@@ -27,6 +27,11 @@ namespace GearShop.Services.Repository
         public DbSet<Product> Products { get; set; }
 
 		/// <summary>
+		/// Типы продуктов.
+		/// </summary>
+        public DbSet<ProductType> ProductTypes { get; set; }
+
+		/// <summary>
 		/// Не зарегистрированые покупатели.
 		/// </summary>
 		public DbSet<NonRegisteredBuyer> NonRegisteredBuyers { get; set; }

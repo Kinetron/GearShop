@@ -8,4 +8,11 @@ public interface IDataSynchronizer
     /// <param name="fileName"></param>
     /// <returns></returns>
     bool CsvSynchronize(string fileName);
+
+    /// <summary>
+    /// Синхронизация картинок продуктов.
+    /// </summary>
+    /// <param name="fileName"></param>
+    /// <returns></returns>
+    bool ProductImagesSynchronize(string fileName, string storagePath);
 }

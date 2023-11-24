@@ -15,17 +15,7 @@ namespace DataParser.Services
         /// Анализаторы типов продуктов. Порядок анализаторов должен соответствовать
         /// порядку сортировки в прайс листе.
         /// </summary>
-        private readonly IProductAnalyzer[] _analyzers =
-        {
-            new BearingAnalyzer(),
-            new OuterHolderAnalyzer(),
-            new SleeveAnalyzer(),
-            new MudStripperAnalyzer(),
-            new СhainLinkAnalyzer(),
-            new RingAnalyzer(),
-            new BoxAnalyzer(),
-            new CuffAnalyzer()
-        };
+
 
         /// <summary>
         /// Парсеры разных типов продуктов.
@@ -37,32 +27,88 @@ namespace DataParser.Services
         /// </summary>
         public AllProducts AllProducts { get; private set; } = new AllProducts();
 
-        public ProductTypesParser()
+
+
+		private readonly IProductAnalyzer[] _analyzers =
+		{
+			new OuterHolderAnalyzer(),
+
+
+			new SleeveAnalyzer(),
+
+			new MudStripperAnalyzer(),
+
+			new СhainLinkAnalyzer(),
+
+			new RingAnalyzer(),
+
+
+			new BoxAnalyzer(),
+			new CuffAnalyzer()
+		};
+
+		/// <summary>
+		/// Ассоциации для определения типа товара.
+		/// Первый столбец – тип товара.
+		/// Второе значение – переключатель на новый товар. Если пуст – остановка обработки.
+		/// </summary>
+		private string[,] _productTypesAssociation = new string[,]
         {
-            _typeParsers = new IProductTypeParser[]
-            {
-                new BearingParser(AllProducts.Bearings),
-                new OuterHolderParser(AllProducts.OuterHolders),
-                new SleeveParser(AllProducts.Sleeves),
-                new MudStripperParser(AllProducts.MudStrippers),
-                new СhainLinkParser(AllProducts.СhainLinks),
-                new RingParser(AllProducts.Rings),
-                new BoxParser(AllProducts.Boxes),
-                new CuffParser(AllProducts.Cuffs)
-            };
-            
-            if (_typeParsers.Length != _analyzers.Length)
-            {
-                throw new ArgumentException("Неверное определение парсеров и анализаторов.");
-            }
+	        {"Подшипники", "Внешняя обойма"},
+	        {"Внешняя обойма", "Втулка"},
+			{"Втулки", "Грязесъемник"},
+			{"Грязесъемник", "Звено"},
+			{"Звено", "Кольцо"},
+			{"Кольца", "Комплект"},
+			{"Корпуса","Манжета"},
+			{"Манжеты", "Ремень"},
+			{"Ремни", "Ремкомплект"},
+			{"Ремкомплект","Ролик"},
+			{"Сальники","Съёмник"},
+			{"Съёмники","Уплотнение поршневое"},
+			{"Уплотнители", "Цепь"},
+			{"Цепи","Шайба"},
+			{"Шайбы", "Шар"},
+			{"Шары", "Шнур"},
+			{"Шнуры", "Электрод"},
+			{"Электроды", ""}
+		};
+
+
+		/// <summary>
+		/// Определяет тип продукта.
+		/// </summary>
+		/// <param name="products"></param>
+		/// <returns></returns>
+		public bool DefineProductsType(List<Product> products)
+		{
+			int productTypePos = 0;
+			int associationLen = _productTypesAssociation.GetLength(0) - 1;
+
+			//В прайсе товар отсортирован. Делаем упрощенную реализацию анализатора. Для ускорения работы.
+			foreach (var product in products)
+	        {
+		        string switchValue = _productTypesAssociation[productTypePos, 1];
+
+		        //Товар изменился.
+		        if (associationLen > productTypePos && product.Name.Contains(switchValue))
+		        {
+			        productTypePos++;
+		        }
+
+		        product.ProductTypeName = _productTypesAssociation[productTypePos, 0];
+	        }
+
+	        return true;
         }
 
-        /// <summary>
-        /// Разбирает список продуктов на сущности.
-        /// </summary>
-        /// <param name="products"></param>
-        /// <returns></returns>
-        public bool ParseProducts(List<Product> products)
+
+		/// <summary>
+		/// Разбирает список продуктов на сущности.
+		/// </summary>
+		/// <param name="products"></param>
+		/// <returns></returns>
+		public bool ParseProducts(List<Product> products)
         {
             int analyzerPos = 0;
 

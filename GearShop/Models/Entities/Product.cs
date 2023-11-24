@@ -8,7 +8,9 @@ public class Product
 {
     public int Id { get; set; }
 
-    public string Name { get; set; } = null!;
+    public int? ProductTypeId { get; set; }
+	
+	public string Name { get; set; } = null!;
 
     public decimal? PurchaseCost { get; set; }
 
@@ -33,6 +35,4 @@ public class Product
     public string? Changer { get; set; }
 
     public long? ProductImageId { get; set; }
-
-	public ProductImage ProductImage { get; set; }
 }

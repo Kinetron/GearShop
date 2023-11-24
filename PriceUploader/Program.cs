@@ -15,7 +15,8 @@ namespace PriceUploader
 
         static void Main(string[] args)
         {
-            List<ICommand> allowCommands = CreateCommands(); //Доступные пользователю команды.
+
+			List<ICommand> allowCommands = CreateCommands(); //Доступные пользователю команды.
             ICommandExecutor executor = new CommandExecutor(allowCommands, PrintText, PrintError);
 
             ShowInfoHeader(allowCommands);
@@ -121,9 +122,10 @@ namespace PriceUploader
         {
             return new List<ICommand>()
             {
-                new Upload(PrintText, PrintError, PrintProgress),
+                new Parse(PrintText, PrintError, PrintProgress),
                 new UploadCsv(PrintText, PrintError, PrintProgress),
-                new Exit()
+                new UploadImages(PrintText, PrintError, PrintProgress),
+				new Exit()
             };
         }
     }

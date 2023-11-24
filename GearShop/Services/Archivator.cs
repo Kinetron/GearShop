@@ -1,0 +1,44 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GearShop.Services
+{
+	internal static class Archivator
+	{
+		public static string ArchiveFolderToZip(string folderPath, string archiveName)
+		{
+			string zipPath = Path.Combine(Path.GetDirectoryName(folderPath), $"{archiveName}.zip");
+			ZipFile.CreateFromDirectory(folderPath, zipPath, CompressionLevel.Fastest, true);
+			return zipPath;
+		}
+
+		public static void UnpackZipToFolder(string zipPath, string extractPath)
+		{
+			ZipFile.ExtractToDirectory(zipPath, extractPath);
+		}
+
+		/// <summary>
+		/// Архив разбитый на части.
+		/// </summary>
+		/// <param name="zipPath"></param>
+		/// <param name="extractPath"></param>
+		public static int UnpackSplitZip(string zipPath, string extractPath)
+		{
+			int partCount = 0;
+			using (var zip = Ionic.Zip.ZipFile.Read(zipPath))
+			{
+				foreach (var item in zip)
+				{
+					item.Extract(extractPath, Ionic.Zip.ExtractExistingFileAction.OverwriteSilently);
+					partCount++;
+				}
+			}
+
+			return partCount;
+		}
+	}
+}

@@ -56,11 +56,19 @@ namespace GearShop.Services
 			//_dbContext.SaveChanges();
 
 			DateTime beginDt = DateTime.Now;
+
+			//Идентификатор продукта с не известными типом.
+			int defaultTypeId = _dbContext.ProductTypes.First(x=>x.Name == "Прочие").Id;
+
 			try
 			{
 				foreach (var item in products)
 				{
-					item.Name = FilteredName(item.Name);
+					//Тип продукта.
+					int? productTypeId =
+						_dbContext.ProductTypes.FirstOrDefault(x => x.Name == item.ProductTypeName)?.Id;
+
+					if (!productTypeId.HasValue) productTypeId = defaultTypeId;
 
 					Product product = new Product()
 					{
@@ -70,9 +78,10 @@ namespace GearShop.Services
 						WholesaleCost = item.WholesaleCost,
 						Rest = item.Rest,
 						ImageName = item.ImageName,
-						Available = item.Available
+						Available = item.Available,
+						ProductTypeId = productTypeId.Value,
 					};
-					
+
 					//Существует ли продукт?
 					if (_dbContext.Products.Count(x => x.Name == item.Name) > 0)
 					{
@@ -83,8 +92,14 @@ namespace GearShop.Services
 						exists.WholesaleCost = item.WholesaleCost;
 						exists.Rest = item.Rest;
 						exists.Available = item.Available;
-						exists.ImageName = item.ImageName;
+						exists.ProductTypeId = productTypeId.Value;
 						exists.Changed = DateTime.Now;
+						
+						//Картинки нет. Добавим.
+						if (string.IsNullOrEmpty(exists.ImageName))
+						{
+							exists.ImageName =  item.ImageName;
+						}
 					}
 					else
 					{
@@ -132,14 +147,27 @@ namespace GearShop.Services
 		}
 
 		/// <summary>
-		/// Вынести в прогу загрузчик!
+		/// Синхронизация картинок продуктов.
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="fileName"></param>
 		/// <returns></returns>
-		private string FilteredName(string data)
+		public bool ProductImagesSynchronize(string fileName, string storagePath)
 		{
-			string[] filter = data.Split(',');
-			return filter[0];
+			string zipFile = Path.Combine(storagePath, fileName);
+			string imageDir = Path.Combine(storagePath, Path.GetFileNameWithoutExtension(fileName));
+
+			Archivator.UnpackSplitZip(zipFile, imageDir);
+
+
+			List<string> files = Directory.GetFiles(imageDir, "*.*", SearchOption.AllDirectories).ToList();
+
+			foreach (string file in files)
+			{
+				FileInfo mFile = new FileInfo(file);
+				mFile.MoveTo(Path.Combine(@"wwwroot\productImages", mFile.Name));
+			}
+
+			return true;
 		}
 	}
 }

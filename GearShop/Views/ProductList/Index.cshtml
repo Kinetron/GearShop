@@ -60,18 +60,21 @@
 <div id="mainPanel">
 	<div class="ui-grid">
 		<div class="ui-grid-row">
-			<div class="ui-grid-col-2">
-				<ul id="pm1">
-					<li><h3>Товары</h3></li>
-					<li><a>Все товары</a></li>
-				</ul>
-			</div>
 			<div class="ui-grid-col-10">
 			</div>
 		</div>
 		<div class="ui-grid-row">
 			<div class="ui-grid-col-2">
-			
+				<div class="ui-grid-col-2">
+					<ul id="pm1">
+						<li><h3>Товары</h3></li>
+						<li><a onClick="ShowcaseScript.productTypeChanged(-1);">Все товары</a></li>
+						@foreach (var item in (List<KeyValuePair<int,string>>)ViewData["ProductTypes"])
+						{
+							<li><a onClick="ShowcaseScript.productTypeChanged(@item.Key);">@item.Value</a></li>
+						}
+					</ul>
+				</div>
 			</div>
 			<div class="ui-grid-col-10">
 				<div class="searchPanel">
@@ -101,9 +104,11 @@ const ShowcaseScript = {
 	currentPage: 1,
 	
 	searchText: '',
+
+	productTypeId: -1,
 	
 	searchParam() {
-			return { currentPage: this.currentPage, searchText: this.searchText };
+			return { currentPage: this.currentPage, searchText: this.searchText, productTypeId: this.productTypeId};
 	},
 	
 	setCurrentPage(page) {
@@ -162,15 +167,15 @@ const ShowcaseScript = {
 			}
 		});
 
-		this.updatePaginator(this.searchText);
+		this.updatePaginator();
 	},
 	
 	@*Обновляет данные пейдженатора-количество строк и страниц.*@
-	updatePaginator(searchText) {
+	updatePaginator() {
 		$.ajax({
 			type: "GET",
 			url: '/ProductList/GetPaginateData',
-			data: { searchText: searchText },
+			data: ShowcaseScript.searchParam(),
 			dataType: "json",
 			error: function (error) {
 				console.log(error);
@@ -197,7 +202,13 @@ const ShowcaseScript = {
 
 	updateProductList() {
 		$('#tbProductList').puidatagrid('reload');
-		this.updatePaginator(this.searchText);
+		this.updatePaginator();
+	},
+
+	@*Фильтр по типам продуктов.*@
+	productTypeChanged(typeId) {
+		ShowcaseScript.productTypeId = typeId;
+		this.updateProductList();
 	},
 
 	@*Купить товар.*@
@@ -226,7 +237,7 @@ const ShowcaseScript = {
 								  <div class="price"> ${product.cost}&nbsp;₽</div>
 								<div>В наличии: ${product.amount}</div>
 								<div>
-									<button id="buy${product.id}" type="button" onClick="(ShowcaseScript.buy(${product.id}, '${product.name}', '${product.cost}', '${product.imageName}'));"
+									<button id="buy${product.id}" type="button" onClick="ShowcaseScript.buy(${product.id}, '${product.name}', '${product.cost}', '${product.imageName}');"
 									class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">Купить</button>
 								</div>					
 						 </div>
