@@ -229,6 +229,7 @@ namespace GearShop.Services.Repository
 
 					await transaction.CommitAsync();
 
+					Log.Information($"Create new order from {ip} by {userGuid}");
 					return await Task.FromResult(order.Id);
 				}
 				catch (Exception e)

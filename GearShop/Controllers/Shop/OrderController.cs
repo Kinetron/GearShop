@@ -48,8 +48,9 @@ namespace GearShop.Controllers.Shop
 		[HttpPost]
 		public async Task<IActionResult> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string userGuid)
 		{
-			var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-			long orderNumber = await _repository.CreateOrder(model, orderInfo, userGuid, ip);
+			string remoteIpAddress = GetRemoteIp();
+
+			long orderNumber = await _repository.CreateOrder(model, orderInfo, userGuid, remoteIpAddress);
 			if (orderNumber == -1)
 			{
 				return BadRequest();
@@ -103,6 +104,15 @@ namespace GearShop.Controllers.Shop
 
 			var json = JsonConvert.SerializeObject(orderList, Formatting.Indented, settings);
 			return Ok(json);
+		}
+		
+		private string GetRemoteIp()
+		{
+			string remoteIpAddress = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
+			if (Request.Headers.ContainsKey("X-Forwarded-For"))
+				remoteIpAddress = Request.Headers["X-Forwarded-For"];
+
+			return remoteIpAddress;
 		}
 	}
 }

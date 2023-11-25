@@ -4,6 +4,7 @@ using GearShop.Contracts;
 using GearShop.Services;
 using GearShop.Services.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -100,9 +101,13 @@ namespace GearShop
 	           .CreateLogger();
 
 			builder.Host.UseSerilog();
+			builder.Services.Configure<ForwardedHeadersOptions>(options =>
+			{
+				options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+			});
+
 			var app = builder.Build();
 			
-
 
 			// Configure the HTTP request pipeline.
 			if (!app.Environment.IsDevelopment())

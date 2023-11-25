@@ -2,6 +2,7 @@
 using GearShop.Models.Dto.Products;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using Wangkanai.Detection.Models;
 using Wangkanai.Detection.Services;
 
