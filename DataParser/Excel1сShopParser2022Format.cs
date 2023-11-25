@@ -43,9 +43,10 @@ namespace DataParser
 		public const string ImageFolder = "Images";
 
 		/// <summary>
-		/// При обработке продуктов создает id для каждого имени продукта.
+		/// Псевдо идентификаторы картинок(имена продуктов)
+		/// id-название картинки без расширения, name - название продукта к которому привязана картинка.
 		/// </summary>
-		private readonly List<GuidName> _productIds = new List<GuidName>();
+		private List<IdName> _imageIds = new List<IdName>();
 
         /// <summary>
         /// Массив для определения буквы по индексу, нужен только для парсинга с .xls
@@ -78,6 +79,11 @@ namespace DataParser
             4, 13, 14, 15, 16, 17, 18 //Номер ячейки в файле.
         };
 
+        /// <summary>
+        /// Счетчик для получения идентификаторов картинок.
+        /// </summary>
+        private int _imageIdCount;
+
 		/// <summary>
 		/// Номер ячейки содержащей название продукта.
 		/// </summary>
@@ -87,6 +93,15 @@ namespace DataParser
 		/// Сообщение об ошибке.
 		/// </summary>
 		public string LastError { get; private set; }
+
+		/// <summary>
+		/// Возвращает следующий идентификатор картинки.
+		/// </summary>
+		/// <returns></returns>
+		private int GetNextImageId()
+		{
+			return ++_imageIdCount;
+		}
 
 		/// <summary>
 		/// Открывает эксель файл
@@ -114,7 +129,39 @@ namespace DataParser
 
 	        return true;
         }
-        
+
+		/// <summary>
+		/// Задает идентификаторы продуктов к которым привязаны картинки.
+		/// В качестве идентификатора выступает имя.
+		/// В прайсе нет идентификаторов продукта и картинок.
+		/// </summary>
+		/// <param name=""></param>
+		public void SetImageInfo(List<KeyValuePair<string, string>> info)
+		{
+			_imageIds = new List<IdName>();
+            
+			info.ForEach(x =>
+            {
+	            int index = x.Value.IndexOf(".");
+	            string digStr = x.Value.Substring(0, index);
+
+	            if (int.TryParse(digStr, out int dig))
+	            {
+                    _imageIds.Add(new IdName()
+                    {
+                        Name = x.Key,
+                        Id = dig
+                    });
+	            }
+            });
+
+			//Получение текущего значение идентификатора картинки. Если не первый раз.
+			if (info.Count > 0)
+			{
+				_imageIdCount = _imageIds.Max(x => x.Id);
+			}
+		}
+
         /// <summary>
         /// Парсит файл.
         /// </summary>
@@ -392,26 +439,42 @@ namespace DataParser
 				            return null;
 			            }
 
+                        if(string.IsNullOrEmpty(product.Name)) continue;;
+
 			            FilterProduct(product);
-
+                        
                         //Для записей для которых есть картинки.
-			            if (!string.IsNullOrEmpty(product.ImageName))
-			            {
-				            GuidName identity = new GuidName();
-				            identity.Id = Guid.NewGuid();
-				            identity.Name = product.Name;
-				            _productIds.Add(identity);
+                        if (!string.IsNullOrEmpty(product.ImageName))
+                        {
+	                        var imgId = _imageIds.FirstOrDefault(x => x.Name == product.Name);
 
-							//Библиотека выгружает только png.
-							product.ImageName = $"{identity.Id.ToString()}.png";
-						}
+	                        if (imgId == null) //На сервере нет картинки.
+							{
+		                        //Добавляем данные для идентификации картинки при привязки к имени.
+		                        var info = new IdName()
+		                        {
+			                        Id = GetNextImageId(),
+			                        Name = product.Name,
+		                        };
+
+		                        _imageIds.Add(info);
+
+		                        //Формируем название будущей картинки. Библиотека выгружает только png.
+		                        product.ImageName = $"{info.Id}.png";
+							}
+	                        else
+	                        {
+								//Обязательно копируем название картинки с сервера. В прайсе нет идентификаторов.
+								product.ImageName = $"{imgId.Id}.png";
+							}
+                        }
                         
 			            products.Add(product);
 		            }
 	            }
 	            catch (Exception e)
 	            {
-		            LastError = $"Исключение для {line} " +e.Message;
+		            LastError = $"Исключение для {line} " +e.Message +e.StackTrace;
 				}
             }
 
@@ -436,6 +499,8 @@ namespace DataParser
 		/// <returns></returns>
 		private Product ParseRowRawCsv(string[] columns)
 		{
+			columns = columns.Select(x => x.Replace("#NULL!", "")).ToArray();
+
 			Product product = new Product();
 			Type type = typeof(Product);
 
@@ -459,7 +524,7 @@ namespace DataParser
 						char nbsp = (char)160;
 						cellText = cellText.Replace(nbsp, ' ').Replace(" ", "");
 					}
-
+                    
 					//Для свойств ссылочного типа обязательно значение отличное от null. Иначе исключение.
 					object value = TypesConverter.ConvertTypes(propertyValue, cellText);
 					if (value == null)
@@ -509,48 +574,52 @@ namespace DataParser
 			
 			WorkSheet sheet = _workBook.WorkSheets[0]; // Выбор первого листа
 
-			List<IronXL.Drawing.Images.IImage> images = sheet.Images;
-			int totalRows = images.Count;
-			int currentRow = 1; //Текущая обработанная строка.
-
-			List<string> error = new List<string>(); 
-
-			foreach (IronXL.Drawing.Images.IImage image in images)
+            List<string> error = new List<string>();
+			try
 			{
-				var t = image.Id;
-				Position position = image.Position;
-
-				//На основании данных картинки, определяем имя продукта к которому она относиться.
-				Product product = new Product();
-                product.Name = GetProductName(sheet, position.Row2);
-                FilterProduct(product);
-
-				//Получаем идентификатор для продукта к которому привязана картинка
-				GuidName productId = _productIds.FirstOrDefault(p => p.Name == product.Name);
-				if (productId == null)
+				List<IronXL.Drawing.Images.IImage> images = sheet.Images;
+				int totalRows = images.Count;
+				int currentRow = 1; //Текущая обработанная строка.
+                
+				foreach (IronXL.Drawing.Images.IImage image in images)
 				{
-                    //Добавить обработку для странных имен " "" """
-					string text = $"Не найден идентификатор для продукта {product.Name}. Картинки не будет.";
-                    error.Add(text);
-					continue;
-					//return false;
+					Position position = image.Position;
+
+					//На основании данных картинки, определяем имя продукта к которому она относиться.
+					Product product = new Product();
+					product.Name = GetProductName(sheet, position.Row2);
+					FilterProduct(product);
+
+					//Получаем идентификатор для продукта к которому привязана картинка
+					var productId = _imageIds.FirstOrDefault(p => p.Name == product.Name);
+					if (productId == null)
+					{
+						//Добавить обработку для странных имен " "" """
+						string text = $"Не найден идентификатор для продукта {product.Name}. Картинки не будет.";
+						error.Add(text);
+						continue;
+					}
+
+					string imagePath = Path.Combine(ImageFolder, $"{productId.Id}.png");
+					File.WriteAllBytes(imagePath, image.Data);
+
+					progressInfo(currentRow, totalRows); //Передаем пользователю о прогрессе обработки строк.
+					currentRow++;
 				}
 
-				string fileName = productId.Id.ToString();
-				string imagePath = Path.Combine(ImageFolder, $"{fileName}.png");
-                File.WriteAllBytes(imagePath, image.Data);
-
-                progressInfo(currentRow, totalRows); //Передаем пользователю о прогрессе обработки строк.
-                currentRow++;
+				progressInfo(totalRows, totalRows);
 			}
-
-            //Удалить после доработок страных имен
-            if (error.Any())
-            {
-	            LastError = string.Join(Environment.NewLine, error);
-            }
-
-            progressInfo(totalRows, totalRows);
+			catch (Exception e)
+			{
+                LastError = $"Возможно нужно открыть файл. Нажать <Разрешить редактирование>. Сохранить.  Исключение {e.Message}  {e.StackTrace}";
+				return false;
+			}
+			
+			//Удалить после доработок страных имен
+			if (error.Any())
+			{
+				LastError = string.Join(Environment.NewLine, error);
+			}
 
 			return true;
 		}

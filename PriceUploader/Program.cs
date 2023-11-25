@@ -1,6 +1,6 @@
 ﻿using PriceUploader.Commands;
 using PriceUploader.Contracts;
-using PriceUploader.Services;
+using RemoteControlApi;
 using System;
 using System.Diagnostics;
 using System.Windows.Input;
@@ -15,7 +15,6 @@ namespace PriceUploader
 
         static void Main(string[] args)
         {
-
 			List<ICommand> allowCommands = CreateCommands(); //Доступные пользователю команды.
             ICommandExecutor executor = new CommandExecutor(allowCommands, PrintText, PrintError);
 

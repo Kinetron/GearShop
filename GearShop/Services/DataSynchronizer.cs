@@ -26,6 +26,8 @@ namespace GearShop.Services
 			_logger = logger;
 		}
 
+		public string LastError { get; private set; }
+
 		/// <summary>
 		/// Синхронизирует данные в БД с файлом CSV.
 		/// </summary>
@@ -156,18 +158,40 @@ namespace GearShop.Services
 			string zipFile = Path.Combine(storagePath, fileName);
 			string imageDir = Path.Combine(storagePath, Path.GetFileNameWithoutExtension(fileName));
 
-			Archivator.UnpackSplitZip(zipFile, imageDir);
-
-
-			List<string> files = Directory.GetFiles(imageDir, "*.*", SearchOption.AllDirectories).ToList();
-
-			foreach (string file in files)
+			try
 			{
-				FileInfo mFile = new FileInfo(file);
-				mFile.MoveTo(Path.Combine(@"wwwroot\productImages", mFile.Name));
+				CleanDir(imageDir);
+				Archivator.UnpackSplitZip(zipFile, imageDir);
+				List<string> files = Directory.GetFiles(imageDir, "*.*", SearchOption.AllDirectories).ToList();
+				
+				foreach (string file in files)
+				{
+					FileInfo mFile = new FileInfo(file);
+					mFile.MoveTo(Path.Combine(@"wwwroot", "productImages", mFile.Name), true);
+				}
+			}
+			catch (Exception ex)
+			{
+				LastError = $"Исключение {ex.Message} {ex.StackTrace}";
+				return false;
 			}
 
 			return true;
+		}
+
+		/// <summary>
+		/// Удаляет все файлы в директории.
+		/// </summary>
+		/// <param name="dir"></param>
+		private void CleanDir(string dir)
+		{
+			if (!Directory.Exists(dir)) return;
+
+			foreach (string file in Directory.GetFiles(dir))
+			{
+				FileInfo fi = new FileInfo(file);
+				fi.Delete();
+			}
 		}
 	}
 }

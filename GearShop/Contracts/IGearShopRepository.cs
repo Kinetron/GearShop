@@ -68,5 +68,11 @@ namespace GearShop.Contracts
         /// </summary>
         /// <returns></returns>
         Task<List<ProductType>> GetProductTypesAsync();
-	}
+
+		/// <summary>
+		/// Возвращает название картинок и название продукта к которому относиться картинка.
+		/// </summary>
+		/// <returns></returns>
+		Task<List<KeyValuePair<string, string>>> GetProductImagesInfoAsync();
+    }
 }

@@ -1,5 +1,6 @@
 ﻿using GearShop.Contracts;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace GearShop.Controllers
 {
@@ -11,12 +12,15 @@ namespace GearShop.Controllers
 		private readonly IFileStorage _fileStorage;
 		private readonly IDataSynchronizer _dataSynchronizer;
 		private readonly IIdentityService _identityService;
+		private readonly IGearShopRepository _gearShopRepository;
 
-		public UploadDataController(IFileStorage fileStorage, IDataSynchronizer dataSynchronizer, IIdentityService identityService)
+		public UploadDataController(IFileStorage fileStorage, IDataSynchronizer dataSynchronizer, 
+			IIdentityService identityService, IGearShopRepository gearShopRepository)
 		{
 			_fileStorage = fileStorage;
 			_dataSynchronizer = dataSynchronizer;
 			_identityService = identityService;
+			_gearShopRepository = gearShopRepository;
 		}
 
 		/// <summary>
@@ -87,10 +91,29 @@ namespace GearShop.Controllers
 
 			if (!_dataSynchronizer.ProductImagesSynchronize(fileName, _fileStorage.StoragePath))
 			{
-				return StatusCode(507);
+				return StatusCode(507, _dataSynchronizer.LastError);
 			}
 
-			return Ok("dsddss");
+			return Ok();
+		}
+
+		/// <summary>
+		/// Возвращает название картинок и название продукта к которому относиться картинка.
+		/// </summary>
+		/// <param name="userName"></param>
+		/// <param name="password"></param>
+		/// <returns></returns>
+		public async Task<IActionResult> GetProductImagesInfo(string userName, string password)
+		{
+			if (!_identityService.IsValidUser(userName, password))
+			{
+				return StatusCode(401);
+			}
+
+			var result = await _gearShopRepository.GetProductImagesInfoAsync();
+			string json = JsonConvert.SerializeObject(result);
+
+			return Ok(json);
 		}
 	}
 }

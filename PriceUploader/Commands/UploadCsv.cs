@@ -12,7 +12,7 @@ using DataParser.Models;
 using DataParser.Models.Products;
 using DataParser.Services;
 using PriceUploader.Contracts;
-using PriceUploader.Services;
+using RemoteControlApi;
 using static System.Net.WebRequestMethods;
 
 namespace PriceUploader.Commands
@@ -62,7 +62,7 @@ namespace PriceUploader.Commands
 			//var allProducts = productTypesParser.AllProducts;
 
 			_sendTextToUser($"Загрузка файла на сервер...{Environment.NewLine}");
-            Services.WebClient fileUploader = new Services.WebClient();
+            RemoteControlApi.WebClient fileUploader = new RemoteControlApi.WebClient();
 
             //string url = "http://autolugansk.ru/LoadProductList/UploadCsv";
 			//string url = "https://localhost:44342/LoadProductList/UploadCsv";

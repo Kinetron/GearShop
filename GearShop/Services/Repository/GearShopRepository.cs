@@ -302,5 +302,15 @@ namespace GearShop.Services.Repository
 		{
 			return await _dbContext.ProductTypes.OrderBy(x=>x.Name).ToListAsync();
 		}
+
+		/// <summary>
+		/// Возвращает название картинок и название продукта к которому относиться картинка.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<List<KeyValuePair<string, string>>> GetProductImagesInfoAsync()
+		{
+			return await _dbContext.Products.Where(p=>!string.IsNullOrEmpty(p.ImageName)).Select(p => new KeyValuePair<string, string>(p.Name, p.ImageName)
+			).ToListAsync();
+		}
     }
 }

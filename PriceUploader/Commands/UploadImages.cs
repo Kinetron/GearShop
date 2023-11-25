@@ -5,8 +5,8 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using PriceUploader.Contracts;
-using PriceUploader.Services;
-using WebClient = PriceUploader.Services.WebClient;
+using RemoteControlApi;
+using WebClient = RemoteControlApi.WebClient;
 
 namespace PriceUploader.Commands
 {
@@ -51,7 +51,7 @@ namespace PriceUploader.Commands
 
 
 			_sendTextToUser($"Загрузка файлов на сервер...{Environment.NewLine}");
-            Services.WebClient fileUploader = new Services.WebClient();
+            RemoteControlApi.WebClient fileUploader = new RemoteControlApi.WebClient();
 
 			int total = listArhives.Length;
 			int current = 1;
@@ -81,7 +81,9 @@ namespace PriceUploader.Commands
 
 			if (result.StatusCode != HttpStatusCode.OK)
 			{
-				_sendTextToUser($"Ошибка загрузки файла: {(int)result.StatusCode}. Попробуйте еще раз выполнить команду.{Environment.NewLine}");
+				string error = result.Content.ReadAsStringAsync().Result;
+
+				_sendTextToUser($"Ошибка загрузки файла: {(int)result.StatusCode} {error}. Попробуйте еще раз выполнить команду.{Environment.NewLine}");
 				EventEndWork?.Invoke();
 				return;
 			}

@@ -1,13 +1,14 @@
 ﻿using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Security.Policy;
+using System.Text;
 
-namespace PriceUploader.Services
+namespace RemoteControlApi
 {
 	/// <summary>
 	/// Сервис загрузки файлов.
 	/// </summary>
-	internal class WebClient
+	public class WebClient
 	{
 		/// <summary>
 		/// Загрузка файла на сервер.
@@ -46,6 +47,28 @@ namespace PriceUploader.Services
 				form.Add(new StringContent(content.Value), name: content.Key);
 
 				return await httpClient.PostAsync(url, form);
+			}
+		}
+
+		public async Task<HttpResponseMessage> GetAsync(string url, string userName, string password)
+		{
+			using (var httpClient = new HttpClient())
+			{
+				var form = new MultipartFormDataContent();
+			
+				var request = new HttpRequestMessage
+				{
+					Method = HttpMethod.Get,
+					RequestUri = new Uri(url),
+				};
+
+				request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+				{
+					{ "userName", userName },
+					{ "password", password }
+				});
+				
+				return await httpClient.SendAsync(request);
 			}
 		}
 	}
