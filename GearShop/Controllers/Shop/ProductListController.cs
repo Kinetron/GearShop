@@ -2,21 +2,28 @@
 using GearShop.Models.Dto.Products;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Wangkanai.Detection.Models;
+using Wangkanai.Detection.Services;
 
 namespace GearShop.Controllers.Shop
 {
+    /// <summary>
+    /// Основная страница магазина. Список продуктов.
+    /// </summary>
     public class ProductListController : Controller
     {
 	    private readonly IGearShopRepository _gearShopRepository;
+	    private readonly IDetectionService _detectionService;
 
-		/// <summary>
+	    /// <summary>
 		/// Записей на одну отображаемую страницу.
 		/// </summary>
 		private const int recordPerPage = 9;
 
-	    public ProductListController(IGearShopRepository gearShopRepository)
+	    public ProductListController(IGearShopRepository gearShopRepository, IDetectionService detectionService)
 	    {
 		    _gearShopRepository = gearShopRepository;
+		    _detectionService = detectionService;
 	    }
 
         // GET: ProductListController
@@ -24,6 +31,9 @@ namespace GearShop.Controllers.Shop
 		{
 			ViewData["ProductTypes"] = _gearShopRepository.GetProductTypesAsync().Result
 				.Select(x=>new KeyValuePair<int, string>(x.Id, x.Name)).ToList();
+
+			ViewData["IsMobile"] = _detectionService.Device.Type != Device.Desktop;
+
 			return View();
         }
 

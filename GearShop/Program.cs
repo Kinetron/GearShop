@@ -46,14 +46,13 @@ namespace GearShop
                 };
             });
 
-            builder.Services.AddSingleton<IEMailNotifier, EMailNotifier>(x=> 
+            builder.Services.AddDetection(); //Определение типа устройства.
+
+			builder.Services.AddSingleton<IEMailNotifier, EMailNotifier>(x=> 
 	            new EMailNotifier(config["EmailNotifier:senderEmail"],
 		            config["EmailNotifier:senderPassword"],
 		            config["EmailNotifier:companyName"]));
-
-			// var services = _serviceCollection.BuildServiceProvider().GetServices<IDomainHandler<TEvent>>();
-
-
+            
 			builder.Services.AddSingleton<INotifier, Notifier>(x =>
 	            new Notifier(config["EmailNotifier:managerEmail"], 
 		            builder.Services.BuildServiceProvider().GetService<IEMailNotifier>()));
@@ -99,7 +98,8 @@ namespace GearShop
 
             app.UseCookiePolicy();
 
-            app.UseSession();
+            app.UseDetection(); //Определение типа устройства.
+			app.UseSession();
 
             app.Use(async (context, next) =>
             {

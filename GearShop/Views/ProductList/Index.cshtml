@@ -1,12 +1,18 @@
-﻿@*Страница выбора продуктов.*@
+﻿@*Страница выбора продуктов. Витрина магазина. Список продуктов.*@
 @{
 	Layout = "~/Views/Shared/_Layout.cshtml";
+	bool isMobile = (bool)ViewData["IsMobile"];
 }
+
 <style>
-	.searchPanel {
+	.searchPanel-desktop {
 		padding: 0 0 10px 0;
 	}
 	
+	.searchPanel-mobile {
+		padding: 10px 0 10px 0;
+	}
+
 	.product-cell{
 		height: 180px!important;   
 	}
@@ -55,40 +61,67 @@
 		width: 30%;
 		display: inline-block;
 	}
+
+	.fa-fw {
+		padding-right: 5px;
+	}
+
+	.select-type-product {
+		font-weight: bold!important;
+	}
 </style>
 
 <div id="mainPanel">
 	<div class="ui-grid">
-		<div class="ui-grid-row">
-			<div class="ui-grid-col-10">
-			</div>
-		</div>
-		<div class="ui-grid-row">
-			<div class="ui-grid-col-2">
-				<div class="ui-grid-col-2">
-					<ul id="pm1">
+		@if (isMobile)
+		{
+			<div class="ui-grid-row">
+				<div class="ui-grid-col-12">
+					<ul id="productTypesControl">
 						<li><h3>Товары</h3></li>
-						<li><a onClick="ShowcaseScript.productTypeChanged(-1);">Все товары</a></li>
-						@foreach (var item in (List<KeyValuePair<int,string>>)ViewData["ProductTypes"])
+						<li>
+							<a onClick="ShowcaseScript.productTypeChanged(-1);" id="productType-1" class="select-type-product"><i class="fa fa-fw fa-car"></i> Все товары</a>
+						</li>
+						@foreach (var item in (List<KeyValuePair<int, string>>)ViewData["ProductTypes"])
 						{
-							<li><a onClick="ShowcaseScript.productTypeChanged(@item.Key);">@item.Value</a></li>
+							<li><a onClick="ShowcaseScript.productTypeChanged(@item.Key);" id="@("productType" + item.Key.ToString())">@item.Value</a></li>
 						}
 					</ul>
 				</div>
 			</div>
-			<div class="ui-grid-col-10">
-				<div class="searchPanel">
-					<input id="searchInput" type="text"/>
-					<button id="searchButton" type="button">Поиск</button>
+		}
+		
+			<div class="ui-grid-row">
+			@if (!isMobile)
+				{
+					<div class="ui-grid-col-2">
+						<ul id="productTypesControl">
+							<li><h3>Товары</h3></li>
+							<li>
+							<a onClick="ShowcaseScript.productTypeChanged(-1);" id="productType-1" class="select-type-product"><i class="fa fa-fw fa-car"></i> Все товары</a>
+							</li>
+							@foreach (var item in (List<KeyValuePair<int, string>>)ViewData["ProductTypes"])
+							{
+							<li><a onClick="ShowcaseScript.productTypeChanged(@item.Key);" id="@("productType" + item.Key.ToString())">@item.Value</a></li>
+							}
+						</ul>
+					</div>
+				}
+				<div class="ui-grid-col-10">
+					<div id="lightboxControl">
+					</div>
+					<div class=@(isMobile ? "searchPanel-mobile" : "searchPanel-desktop")>
+						<input id="searchInput" type="text"/>
+						<button id="searchButton" type="button">Поиск</button>
+					</div>
+					<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
+					<div id="tbProductList"></div>
+					<div id="productsPaginator"></div>
+					<label id="recordCountInfo"></label>
+					<div id="localgrid"></div>
 				</div>
-				<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
-				<div id="tbProductList"></div>
-				<div id="productsPaginator"></div>
-				<label id="recordCountInfo"></label>
-				<div id="localgrid"></div>
 			</div>
 		</div>
-	</div>
 </div>
 
 
@@ -116,7 +149,7 @@ const ShowcaseScript = {
 	},
 		
 	init() {
-			$('#pm1').puimenu();
+		$('#productTypesControl').puimenu();
 		$('#mainPanel').puipanel();
 		$('#searchInput').puiinputtext();
 
@@ -168,6 +201,13 @@ const ShowcaseScript = {
 		});
 
 		this.updatePaginator();
+
+		$('#lightboxControl').puilightbox(
+			{
+					iframe: true
+			}
+		);
+			
 	},
 	
 	@*Обновляет данные пейдженатора-количество строк и страниц.*@
@@ -207,7 +247,10 @@ const ShowcaseScript = {
 
 	@*Фильтр по типам продуктов.*@
 	productTypeChanged(typeId) {
+		$(`#productType${this.productTypeId}`).removeClass("select-type-product");
 		ShowcaseScript.productTypeId = typeId;
+		
+		$(`#productType${typeId}`).addClass("select-type-product");
 		this.updateProductList();
 	},
 
@@ -230,7 +273,7 @@ const ShowcaseScript = {
 		@*переделать на шаблон!!!*@
 		let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
 						  <div class="product-info">
-								<img align="left" src="/productImages/${product.imageName}" class="image">
+											<img align="left" src="/productImages/${product.imageName}" class="image" onclick="ShowcaseScript.imageClick('${product.imageName}');">
 							<div>${product.name}</div>									
 						  </div>
 						  <div id="buy-block">
@@ -238,13 +281,19 @@ const ShowcaseScript = {
 								<div>В наличии: ${product.amount}</div>
 								<div>
 									<button id="buy${product.id}" type="button" onClick="ShowcaseScript.buy(${product.id}, '${product.name}', '${product.cost}', '${product.imageName}');"
-									class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">Купить</button>
+									class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">
+										<i class="fa fa-fw fa-shopping-cart"></i>Купить</button>
 								</div>					
 						 </div>
 					</div>`;
 
 		return html;
-	}
+	},
+
+	imageClick(name) {
+		event.stopPropagation();
+		$('#lightboxControl').puilightbox('showURL', { src: `/productImages/${name}` });
+	},
 }
 </script>
 	 
