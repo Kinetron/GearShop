@@ -48,7 +48,7 @@ namespace GearShop.Contracts
 		/// <param name="model"></param>
 		/// <param name="userGuid"></param>
 		/// <returns></returns>
-		Task<long> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string userGuid);
+		Task<long> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string userGuid, string ip);
 
 		/// <summary>
 		/// Заказы пользователя.

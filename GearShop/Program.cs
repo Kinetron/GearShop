@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Events;
 
 namespace GearShop
 {
@@ -85,17 +87,34 @@ namespace GearShop
            builder.Services.AddControllersWithViews()
                .AddRazorRuntimeCompilation(); //Для верстки страниц без перезагрузки сервиса.
 
-            var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
+           Log.Logger = new LoggerConfiguration()
+	           .MinimumLevel.Information()
+	           .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) //Выводить только варнинги Microsoft.
+	           .WriteTo.File(
+		           @"./logs/log.txt",
+		           shared: true, //Доступен всем процессам.
+		           rollingInterval: RollingInterval.Day,
+		           flushToDiskInterval: TimeSpan.FromSeconds(20),
+		           outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}")
+	           .CreateLogger();
+
+			builder.Host.UseSerilog();
+			var app = builder.Build();
+			
+
+
+			// Configure the HTTP request pipeline.
+			if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+			app.UseSerilogRequestLogging();
+
+			app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseCookiePolicy();

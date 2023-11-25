@@ -10,7 +10,10 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Internal;
 using DataParser.Models;
 using GearShop.Models.Dto;
+using Newtonsoft.Json;
+using Serilog;
 using OrderItemDto = GearShop.Models.OrderItemDto;
+using System.Net;
 
 namespace GearShop.Services.Repository
 {
@@ -140,6 +143,8 @@ namespace GearShop.Services.Repository
 			}
 			catch (Exception ex)
 			{
+				object data = new { guid, ipAddress };
+				Log.Error($"Ошибка {JsonConvert.SerializeObject(data)}", ex);
 				return await Task.FromResult(false);
 			}
 			
@@ -152,17 +157,50 @@ namespace GearShop.Services.Repository
 		/// <param name="model"></param>
 		/// <param name="userGuid"></param>
 		/// <returns></returns>
-		public async Task<long> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string guid)
+		public async Task<long> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string guid, string ip)
 		{
 			Guid userGuid = Guid.Parse(guid);
 
 			//Нет такого покупателя.
-			long? buyerId = _dbContext.NonRegisteredBuyers.First(x => x.BuyerGuid == userGuid)?.ClusterId;
+			long? buyerId = _dbContext.NonRegisteredBuyers.FirstOrDefault(x => x.BuyerGuid == userGuid)?.ClusterId;
 			if (buyerId == null)
 			{
+				//Добавим возможно пришел со старой версии или другого сервера.
+				bool result = await SynchronizeNoRegUserGuidAsync(guid, ip);
+				if (!result) return -1;
+
+				buyerId = _dbContext.NonRegisteredBuyers.FirstOrDefault(x => x.BuyerGuid == userGuid)?.ClusterId;
+			}
+
+			if (buyerId == null)
+			{
+				Log.Error("Ошибка сохранения заказа. Повторно не получен guid пользователя.");
 				return -1;
 			}
-			
+
+
+			//Продукты в заказе.
+			List<OrderItem> orderItems = new List<OrderItem>();
+			foreach (var product in model)
+			{
+				//Ситуация на случай новой БД.
+				var existProduct = await _dbContext.Products.FirstOrDefaultAsync(p=>p.Id == product.Id || p.Name == product.Name);
+				if (existProduct == null)
+				{
+					Log.Warning($"Продукт {JsonConvert.SerializeObject(product)} есть в корзине.{Environment.NewLine} Но нет в БД. Удалим из заказа.");
+					continue;
+				}
+
+				OrderItem item = new OrderItem()
+				{
+					ProductId = existProduct.Id,
+					Amount = product.Amount
+				};
+
+				orderItems.Add(item);
+			}
+
+
 			using (var transaction = _dbContext.Database.BeginTransaction())
 			{
 				try
@@ -177,15 +215,9 @@ namespace GearShop.Services.Repository
 					await _dbContext.SaveChangesAsync();
 					
 					//Продукты в заказе.
-					foreach (var product in model)
+					foreach (var item in orderItems)
 					{
-						OrderItem item = new OrderItem()
-						{
-							OrderId = order.Id,
-							ProductId = product.Id,
-							Amount = product.Amount
-						};
-
+						item.OrderId = order.Id;
 						await _dbContext.OrderItems.AddAsync(item);
 					}
 
@@ -202,6 +234,9 @@ namespace GearShop.Services.Repository
 				catch (Exception e)
 				{
 					transaction.Rollback();
+					object data = new { model, orderInfo, guid };
+					string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+					Log.Error($"Ошибка {json}", e);
 					return await Task.FromResult(-1);
 				}
 			}

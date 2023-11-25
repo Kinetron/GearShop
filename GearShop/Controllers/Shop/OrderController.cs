@@ -8,6 +8,7 @@ using GearShop.Models;
 using GearShop.Models.Entities;
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
+using Serilog;
 
 namespace GearShop.Controllers.Shop
 {
@@ -15,11 +16,13 @@ namespace GearShop.Controllers.Shop
 	{
 		private readonly IGearShopRepository _repository;
 		private readonly INotifier _notifier;
+		private readonly IHttpContextAccessor _httpContextAccessor;
 
-		public OrderController(IGearShopRepository repository, INotifier notifier)
+		public OrderController(IGearShopRepository repository, INotifier notifier, IHttpContextAccessor httpContextAccessor)
 		{
 			_repository = repository;
 			_notifier = notifier;
+			_httpContextAccessor = httpContextAccessor;
 		}
 
 		/// <summary>
@@ -31,7 +34,6 @@ namespace GearShop.Controllers.Shop
 		public IActionResult CreateOrder(string json, string userGuid)
 		{
 			List<ProductDto> model = JsonConvert.DeserializeObject<List<ProductDto>>(json);
-
 			//Перенести в сервис.
             ViewBag.TotalAmount = model.Sum(x => x.Amount * x.Cost);
 
@@ -46,7 +48,8 @@ namespace GearShop.Controllers.Shop
 		[HttpPost]
 		public async Task<IActionResult> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string userGuid)
 		{
-			long orderNumber = await _repository.CreateOrder(model, orderInfo, userGuid);
+			var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+			long orderNumber = await _repository.CreateOrder(model, orderInfo, userGuid, ip);
 			if (orderNumber == -1)
 			{
 				return BadRequest();
