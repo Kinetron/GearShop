@@ -1,0 +1,14 @@
+﻿<ul id="adminMenuControl">
+	<li>
+		<a asp-controller="ProductList" asp-action="ProductInStockroom" data-icon="fa-cloud">Склад</a>
+	</li>
+	<li>
+		<a asp-controller="Order" asp-action="OrderList" data-icon="fa-shopping-cart">Заказы</a>
+	</li>
+</ul>
+ 
+<script type="text/javascript">
+	$(document).ready(function () {
+		$('#adminMenuControl').puimenubar();		
+	});
+</script>

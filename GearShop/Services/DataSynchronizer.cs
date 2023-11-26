@@ -3,6 +3,7 @@ using GearShop.Contracts;
 using GearShop.Controllers;
 using GearShop.Models.Entities;
 using GearShop.Services.Repository;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -19,7 +20,12 @@ namespace GearShop.Services
 		private const int StepProgress = 100;
 		private readonly GearShopDbContext _dbContext;
 		private readonly ILogger<HomeController> _logger;
-		
+
+		/// <summary>
+		/// Название источника в таблице InfoSource для синхронизации прайс листа.
+		/// </summary>
+		private const string PriceSourceName = "Из прайса";
+
 		public DataSynchronizer(GearShopDbContext dbContext, ILogger<HomeController> logger)
 		{
 			_dbContext = dbContext;
@@ -62,6 +68,14 @@ namespace GearShop.Services
 			//Идентификатор продукта с не известными типом.
 			int defaultTypeId = _dbContext.ProductTypes.First(x=>x.Name == "Прочие").Id;
 
+			//Идентификатор источника данных
+			int? infoSourceId = _dbContext.InfoSource.FirstOrDefault(x => x.Name == PriceSourceName)?.Id;
+			if (infoSourceId == null)
+			{
+				_logger.LogError($"Not found id for InfoSource with name {PriceSourceName}");
+				return false;
+			}
+
 			try
 			{
 				foreach (var item in products)
@@ -82,6 +96,7 @@ namespace GearShop.Services
 						ImageName = item.ImageName,
 						Available = item.Available,
 						ProductTypeId = productTypeId.Value,
+						InfoSourceId = infoSourceId.Value 
 					};
 
 					//Существует ли продукт?
@@ -122,7 +137,7 @@ namespace GearShop.Services
 
 				//Все продукты которых нет в прайс листе будут иметь дату раньше.
 				// Удалим продукты которых нет в прайсе.
-				DeleteEarlyProducts(beginDt); //Обновить все продукты 
+				DeleteEarlyProducts(beginDt, infoSourceId.Value); //Обновить все продукты 
 			}
 			catch (Exception ex)
 			{
@@ -136,9 +151,10 @@ namespace GearShop.Services
 		/// Удаляет продукты которых нет в прайсе.
 		/// </summary>
 		/// <param name="beginDt"></param>
-		private void DeleteEarlyProducts(DateTime beginDt)
+		/// <param name="infoSourceId"></param>
+		private void DeleteEarlyProducts(DateTime beginDt, int infoSourceId)
 		{
-			var products = _dbContext.Products.Where(p => p.Changed < beginDt).ToList();
+			var products = _dbContext.Products.Where(p => p.Changed < beginDt && p.InfoSourceId == infoSourceId).ToList();
 			products.ForEach(p=>
 			{
 				p.Deleted = 1;

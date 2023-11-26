@@ -1,5 +1,6 @@
 ﻿using GearShop.Contracts;
 using GearShop.Models.Dto.Products;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -38,25 +39,41 @@ namespace GearShop.Controllers.Shop
 			return View();
         }
 
-        public JsonResult GetProductList(int currentPage, string searchText, int productTypeId)
+        public JsonResult GetProductList(int currentPage, string searchText, int productTypeId, bool available)
         {
-	        return Json(_gearShopRepository.GetProducts(currentPage, recordPerPage, searchText, productTypeId));
+	        return Json(_gearShopRepository.GetProducts(currentPage, recordPerPage, searchText, productTypeId, available));
         }
 
         /// <summary>
         /// Получает параметры пейдженации страниц.
         /// </summary>
         /// <returns></returns>
-        public JsonResult GetPaginateData(string searchText, int productTypeId)
+        public JsonResult GetPaginateData(string searchText, int productTypeId, bool available)
         {
-	        int totalRecords = _gearShopRepository.GetProductCount(searchText, productTypeId);
+	        int totalRecords = _gearShopRepository.GetProductCount(searchText, productTypeId, available);
             int rows = totalRecords / recordPerPage;
 
 	        return Json(new {rows = rows, totalRecords = totalRecords});
         }
 
-		// GET: ProductListController/Details/5
-		public ActionResult Details(int id)
+		/// <summary>
+		/// Продукты на складе.
+		/// </summary>
+		/// <returns></returns>
+		[Authorize(Roles = "Admin")]
+		public ActionResult ProductInStockroom()
+        {
+	        ViewData["ProductTypes"] = _gearShopRepository.GetProductTypesAsync().Result
+		        .Select(x => new KeyValuePair<int, string>(x.Id, x.Name)).ToList();
+
+	        ViewData["IsMobile"] = _detectionService.Device.Type != Device.Desktop;
+
+			return View();
+        }
+
+
+        // GET: ProductListController/Details/5
+			public ActionResult Details(int id)
         {
             return View();
         }

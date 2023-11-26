@@ -15,11 +15,13 @@ namespace GearShop.Services
 		private readonly string _managerEmail;
 
 		private readonly IEMailNotifier _eMailNotifier;
+		private readonly ILogger<Notifier> _logger;
 
-		public Notifier(string managerEmail, IEMailNotifier eMailNotifier)
+		public Notifier(string managerEmail, IEMailNotifier eMailNotifier, ILogger<Notifier> logger)
 		{
 			_managerEmail = managerEmail;
 			_eMailNotifier = eMailNotifier;
+			_logger = logger;
 		}
 
 		/// <summary>
@@ -35,11 +37,20 @@ namespace GearShop.Services
 				OrderToHtmlConverter converter = new OrderToHtmlConverter();
 				string html = converter.Convert(products, orderInfo, orderId);
 
-				_eMailNotifier.SendFromMailRu(_managerEmail, "Новый заказ", html); //Шлю письмо менеджеру
+				bool result = _eMailNotifier.SendFromMailRu(_managerEmail, "Новый заказ", html); //Шлю письмо менеджеру
+				if (!result)
+				{
+					_logger.LogError(_eMailNotifier.LastError);
+				}
+
 				//Добавить формата почты.
 				if (!string.IsNullOrEmpty(orderInfo.BuyerEmail))
 				{
-					_eMailNotifier.SendFromMailRu(orderInfo.BuyerEmail, "Заказ", html); //Шлю письмо клиенту.
+					result = _eMailNotifier.SendFromMailRu(orderInfo.BuyerEmail, "Заказ", html); //Шлю письмо клиенту.
+					if (!result)
+					{
+						_logger.LogError(_eMailNotifier.LastError);
+					}
 				}
 			});
 		}

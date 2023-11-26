@@ -11,9 +11,9 @@ namespace GearShop.Controllers.AdminArea
         [Authorize(Roles = "Admin")]
         public ActionResult Index()
         {
-            return View();
+			return RedirectToAction("ProductInStockroom", "ProductList");
         }
-
+        
         // GET: AdminController/Details/5
         public ActionResult Details(int id)
         {

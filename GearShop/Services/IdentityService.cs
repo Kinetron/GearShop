@@ -10,7 +10,7 @@ using GearShop.Services.Repository;
 namespace GearShop.Services
 {
     /// <summary>
-    /// Авторизация с использованием jwt. Тектовый пароль //HBxD7sGFFttHxKw
+    /// Авторизация с использованием jwt.
     /// </summary>
     public class IdentityService : IIdentityService
     {

@@ -27,8 +27,8 @@ namespace RemoteControlApi
 		private readonly Action<int, int> _printProgress;
 		public string LastError { get; private set; }
 
-		//private static string _hostName = "https://localhost:44342/";
-		private static string _hostName = "http://autolugansk.ru/";
+		private static string _hostName = "https://localhost:44342/";
+		//private static string _hostName = "http://autolugansk.ru/";
 
 		public static string UserName = "UploaderMan898qw";
 		public static string Password = "IpYNrGy5M2TP4eewVdDcII8lOVrHVn2g3c7R5HXHnmPz";

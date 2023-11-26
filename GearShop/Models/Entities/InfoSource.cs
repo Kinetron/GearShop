@@ -3,13 +3,11 @@ using System.Collections.Generic;
 
 namespace GearShop.Models.Entities;
 
-public class ProductImage
+public partial class InfoSource
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public string ImageName { get; set; } = null!;
-
-    public string FileName { get; set; } = null!;
+    public string Name { get; set; } = null!;
 
     public int Deleted { get; set; }
 

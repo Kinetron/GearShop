@@ -24,7 +24,9 @@ public class Product
 
     public string? Available { get; set; }
 
-    public int Deleted { get; set; }
+    public int InfoSourceId { get; set; }
+    
+	public int Deleted { get; set; }
 
     public DateTime? Created { get; set; }
 
@@ -33,6 +35,4 @@ public class Product
     public DateTime? Changed { get; set; }
 
     public string? Changer { get; set; }
-
-    public long? ProductImageId { get; set; }
 }

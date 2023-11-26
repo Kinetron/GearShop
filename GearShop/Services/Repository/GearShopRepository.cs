@@ -64,9 +64,14 @@ namespace GearShop.Services.Repository
         /// Получить список всех продуктов.
         /// </summary>
         /// <returns></returns>
-        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId)
+        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
         {
-	        var data = _dbContext.Products.Where(x=>x.Rest > 0 && x.Deleted == 0);
+	        var data = _dbContext.Products.Where(x=>x.Deleted == 0);
+
+	        if (available)
+	        {
+				data = data.Where(x => x.Rest > 0);
+			}
 
 	        if (productTypeId > 0)
 	        {
@@ -99,9 +104,15 @@ namespace GearShop.Services.Repository
 		/// Возвращает количество продуктов.
 		/// </summary>
 		/// <returns></returns>
-		public int GetProductCount(string searchText, int productTypeId)
+		public int GetProductCount(string searchText, int productTypeId, bool available)
         {
-			var data = _dbContext.Products.Where(x => x.Rest > 0 && x.Deleted == 0);
+			var data = _dbContext.Products.Where(x => x.Deleted == 0);
+
+			if (available)
+			{
+				data = data.Where(x => x.Rest > 0);
+			}
+
 			if (productTypeId > 0)
 			{
 				data = data.Where(x => x.ProductTypeId == productTypeId);

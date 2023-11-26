@@ -27,13 +27,13 @@ namespace GearShop.Contracts
         /// Получить список всех продуктов.
         /// </summary>
         /// <returns></returns>
-        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId);
+        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
 
         /// <summary>
         /// Возвращает количество продуктов.
         /// </summary>
         /// <returns></returns>
-        int GetProductCount(string searchText, int productTypeId);
+        int GetProductCount(string searchText, int productTypeId, bool available);
 
 		/// <summary>
 		/// Проверяет наличие guid в БД. Если нет – добавляет новую запись.

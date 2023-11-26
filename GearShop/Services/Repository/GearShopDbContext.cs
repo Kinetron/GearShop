@@ -50,13 +50,13 @@ namespace GearShop.Services.Repository
 		/// Дополнительная информация о заказе.
 		/// </summary>
 		public DbSet<OrderInfo> OrderInfo { get; set; }
-
-		/// <summary>
-		/// Картинки продуктов.
-		/// </summary>
-		public DbSet<ProductImage> ProductImages { get; set; }
 		
 		public DbSet<SlaiderMainPage> SlaiderMainPage { get; set; }
+
+		/// <summary>
+		/// Источник данных сведений о продукте(Из прайса, добавлен на сайте)
+		/// </summary>
+		public DbSet<InfoSource> InfoSource { get; set; }
 
 		/// <summary>
 		/// Хранит информацию о процессе синхронизации данных. Для прогресс бара.
@@ -97,6 +97,15 @@ namespace GearShop.Services.Repository
 				{
 					tb.HasTrigger("tr_OrderItems_LogIns");
 					tb.HasTrigger("tr_OrderItems_LogUpd");
+				});
+			});
+
+			modelBuilder.Entity<InfoSource>(entity =>
+			{
+				entity.ToTable(tb =>
+				{
+					tb.HasTrigger("tr_InfoSource_LogIns");
+					tb.HasTrigger("tr_InfoSource_LogUpd");
 				});
 			});
 

@@ -11,6 +11,8 @@ namespace GearShop.Services
 		private readonly string _senderPassword;
 		private readonly string _companyName;
 
+		public string LastError { get; private set; }
+
 		public EMailNotifier(string senderEmail, string senderPassword, string companyName)
 		{
 			this._senderEmail = senderEmail;
@@ -24,7 +26,7 @@ namespace GearShop.Services
 		/// <param name="receiverEmail"></param>
 		/// <param name="subject"></param>
 		/// <param name="body"></param>
-		public void SendFromMailRu(string receiverEmail, string subject, string body)
+		public bool SendFromMailRu(string receiverEmail, string subject, string body)
 		{
 			//В документации 465 порт, но у меня там работает только с OAuth
 			//авторизацией, которую не поддерживает стандартный Smtp клиент в .NET
@@ -51,10 +53,12 @@ namespace GearShop.Services
 				}
 				catch (Exception ex)
 				{
-                      //добавь лог
-					  string error = ex.Message;
+					LastError = $"Ошибка {ex.Message} {ex.StackTrace}";
+					return false;
 				}
 			}
+
+			return true;
 		}
 	}
 }

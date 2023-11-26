@@ -57,10 +57,12 @@ namespace GearShop
 	            new EMailNotifier(config["EmailNotifier:senderEmail"],
 		            config["EmailNotifier:senderPassword"],
 		            config["EmailNotifier:companyName"]));
-            
+
+			var provider =builder.Services.BuildServiceProvider();
+
 			builder.Services.AddSingleton<INotifier, Notifier>(x =>
-	            new Notifier(config["EmailNotifier:managerEmail"], 
-		            builder.Services.BuildServiceProvider().GetService<IEMailNotifier>()));
+	            new Notifier(config["EmailNotifier:managerEmail"],
+		            provider.GetService<IEMailNotifier>(), provider.GetService<ILogger<Notifier>>()));
 
             builder.Services.AddSingleton<IFileStorage>(x=>new FileStorage("Upload\\Files"));
             builder.Services.AddScoped<IIdentityService>(x => 
