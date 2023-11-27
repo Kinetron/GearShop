@@ -1,0 +1,48 @@
+﻿!!!!Удалить это!!
+<h3>Заказы покупателей.</h3>
+<div id="remoteeager"></div>
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+		
+	});
+
+	$('#remoteeager').puitreetable({
+		selectionMode: 'multiple',
+		columns: [
+			{ field: 'orderId', headerText: 'Номер заказа' },
+			{ field: 'productName', headerText: 'Товар' },
+			{ field: 'quantity', headerText: 'Количество' },
+			{ field: 'amount', headerText: 'Цена 1шт' },
+			{ field: 'created', headerText: 'Дата заказа' },
+			{ field: 'orderStatus', headerText: 'Статус' },
+			{ field: 'totalSum', headerText: 'Сумма' },
+			{ field: 'buyerName', headerText: 'Покупатель' },
+			{ field: 'buyerPhone', headerText: 'Телефон' }
+		],
+		nodeSelect: function(event, ui) {
+			console.log(ui.data);
+		},
+		nodeUnselect: function(event, ui) {
+		},
+		afterExpand: function(event, ui) {
+		},
+		afterCollapse: function(event, ui) {
+		},
+		nodes: function(ui, response) {     
+			
+			//response.call(this, datajson);
+			//return;
+			$.ajax({
+				type: "GET",
+				url: '@Url.Action("GetOrderList", "Order")',
+				dataType: "json",
+				context: this,
+				success: function (data) {
+					response.call(this, data);
+				}
+			});
+		}
+	});
+</script>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GearShop.Models.Entities;
 
@@ -7,7 +8,9 @@ public class Product
 {
     public int Id { get; set; }
 
-    public string Name { get; set; } = null!;
+    public int ProductTypeId { get; set; }
+	
+	public string Name { get; set; } = null!;
 
     public decimal? PurchaseCost { get; set; }
 
@@ -17,11 +20,13 @@ public class Product
 
     public int? Rest { get; set; }
 
-    public string? ImageName { get; set; }
+	public string? ImageName { get; set; }
 
     public string? Available { get; set; }
 
-    public int Deleted { get; set; }
+    public int InfoSourceId { get; set; }
+    
+	public int Deleted { get; set; }
 
     public DateTime? Created { get; set; }
 

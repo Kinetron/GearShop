@@ -12,7 +12,8 @@ using DataParser.Models;
 using DataParser.Models.Products;
 using DataParser.Services;
 using PriceUploader.Contracts;
-using PriceUploader.Services;
+using RemoteControlApi;
+using static System.Net.WebRequestMethods;
 
 namespace PriceUploader.Commands
 {
@@ -61,11 +62,17 @@ namespace PriceUploader.Commands
 			//var allProducts = productTypesParser.AllProducts;
 
 			_sendTextToUser($"Загрузка файла на сервер...{Environment.NewLine}");
-            FileUploader fileUploader = new FileUploader();
-            HttpResponseMessage answer = fileUploader.Upload("https://localhost:44342/LoadProductList/UploadCsv", 
-	            files[0], "UploaderMan898qw", "IpYNrGy5M2TP4eewVdDcII8lOVrHVn2g3c7R5HXHnmPz").Result;
+            RemoteControlApi.WebClient fileUploader = new RemoteControlApi.WebClient();
 
-            if (answer.StatusCode != HttpStatusCode.OK)
+            //string url = "http://autolugansk.ru/LoadProductList/UploadCsv";
+			//string url = "https://localhost:44342/LoadProductList/UploadCsv";
+			//HttpResponseMessage answer = fileUploader.Upload(url, 
+			//  files[0], "UploaderMan898qw", "IpYNrGy5M2TP4eewVdDcII8lOVrHVn2g3c7R5HXHnmPz").Result;
+
+			HttpResponseMessage answer = fileUploader.Upload(UserData.UploadCsvUrl, files[0], UserData.UserName,
+				UserData.Password).Result;
+
+			if (answer.StatusCode != HttpStatusCode.OK)
             {
 	            _sendTextToUser($"Ошибка загрузки файла: {(int)answer.StatusCode}. Попробуйте еще раз выполнить команду.{Environment.NewLine}");
 				EventEndWork?.Invoke();

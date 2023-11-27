@@ -25,6 +25,11 @@
 		Оформление заказа на сумму: @ViewBag.TotalAmount Р.
 	</div>
 	<div class="ui-grid-row padding">
+		<div class="ui-grid-col-12">
+			<div id="errorMessageControl"></div>
+		</div>
+	</div>
+	<div class="ui-grid-row padding">
 		<div class="ui-grid-col-2">
 			Ваше имя
 		</div>
@@ -52,7 +57,7 @@
 		<div class="ui-grid-col-2">
 		</div>
 		<div class="ui-grid-col-10">
-			На почту прийдет письмо.
+			На почту прийдет письмо
 		</div>
 	</div>
 </div>
@@ -61,20 +66,13 @@
 </div>
 <div id="tbProducts" style="margin-top:20px"></div>
 
-
-<div id="successDialog" title="Заказ">
-	<p>
-		<div id="successDialogText"></div>
-	</p>
-</div>
-
 <script type="text/javascript">
 $(document).ready(function() {
-	CreateOrderScript .Init();
+	CreateOrderScript.init();
 });
 
 const CreateOrderScript = {
-	Init() {
+	init() {
 		$('#buyerName').puiinputtext();
 		$('#buyerPhone').puiinputtext();
 		$('#buyerEmail').puiinputtext();
@@ -82,7 +80,7 @@ const CreateOrderScript = {
 		$('#btnCheckout').puibutton({
 				icon: 'fa-shopping-cart',
 				click: () => {
-					CreateOrderScript.CreateOrder();
+					CreateOrderScript.createOrder();
 				}
 		});
 
@@ -100,23 +98,69 @@ const CreateOrderScript = {
 		$('#successDialog').puidialog({
 			responsive: true
 		});
+
+		$('#errorMessageControl').puimessages();
+
+		@*Сохраненный данные для компонентов ввода*@
+		const userData = CommonScript.readUserDataFromStorage();
+		if (userData != null) {
+			$('#buyerName').val(userData.BuyerName);
+			$('#buyerPhone').val(userData.BuyerPhone);
+			$('#buyerEmail').val(userData.BuyerEmail);
+		}
+
+		CommonScript.synchronizeNoRegUserGuid(); @*Идентификатор не зарегистрированного пользователя*@
+		CommonScript.getUserGuid(); @*Создаст новый идентификатор для не зарегистрированного пользователя.*@
 	},
-	
+
+	ShowError(text) {
+		$('#errorMessageControl').puimessages('show', 'error', { summary: '', detail: text });
+	},
+
+	@*Скрывает сообщение об ошибке.*@
+	ClearMessage() {
+		$('#errorMessageControl').puimessages('clear');
+	},
+
+	@*Валидация введенных данных.*@
+	СheckInputData() {
+		this.ClearMessage();
+
+		if ($('#buyerName').val().length === 0) {
+			this.ShowError('Введите имя');
+			return false;
+		}
+
+		if ($('#buyerPhone').val().length === 0) {
+			this.ShowError('Введите контактный телефон');
+			return false;
+		}
+			
+		return true;
+	},
 	data: @Html.Raw(JsonConvert.SerializeObject(Model)),
-	CreateOrder() {
+	createOrder() {
+			if (!this.СheckInputData()) return;
+
+			const orderInfo = 
+			{
+				BuyerName: $('#buyerName').val(),
+				BuyerPhone: $('#buyerPhone').val(),
+				BuyerEmail: $('#buyerEmail').val()
+			};
+
 			$.ajax({
 				type: "POST",
 				url: '@Url.Action("CreateOrder", "Order")',
-				data: { model1: this.data },
+				data: { model: this.data, orderInfo: orderInfo, userGuid: CommonScript.getUserGuid() },
 				dataType: "json",
-				error: function (error) {
-					console.log(error);
+				error: function(error) {
+					CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения заказа.');
 				},
-				context: this,
-				success: function (response) {
-					$('#successDialogText')
-						.text(`Заказ № ${response} успешно создан. В ближайшее время с вями свяжуться. Запомните номер заказа(${response}).`);
-					$('#successDialog').puidialog('show');
+				success: function(response) {
+					CommonScript.saveUserDataToStorage(orderInfo);
+					CommonScript.clearBasket();
+					window.location = '@Url.Action("SuccessfulСreation", "Order")?' + $.param({ orderId: response });
 				}
 			});
 	}

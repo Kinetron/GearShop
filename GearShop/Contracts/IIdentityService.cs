@@ -16,4 +16,10 @@ public interface IIdentityService
     /// <param name="password"></param>
     /// <returns></returns>
     string Login(string userName, string password);
+
+    /// <summary>
+    /// Проверяет существование пользователя.
+    /// </summary>
+    /// <returns></returns>
+    bool IsValidUser(string userName, string password);
 }

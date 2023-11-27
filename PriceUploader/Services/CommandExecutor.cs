@@ -1,6 +1,6 @@
 ﻿using PriceUploader.Contracts;
 
-namespace PriceUploader.Services
+namespace RemoteControlApi
 {
     /// <summary>
     /// Читает информацию введенную пользователем с клавиатуры,

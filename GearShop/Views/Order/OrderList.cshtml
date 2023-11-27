@@ -1,0 +1,52 @@
+﻿@await Html.PartialAsync("_AdminMenu")
+<h3>Заказы покупателей</h3>
+<div id="ordersTree"></div>
+
+<script type="text/javascript">
+	$(document).ready(function () {
+		OrderListScript.Init();
+	});
+
+	
+	
+const OrderListScript = {
+	Init() {
+		$('#ordersTree').puitreetable({
+				selectionMode: 'single',
+				columns: [
+					{ field: 'orderId', headerText: 'Номер заказа' },
+					{ field: 'productName', headerText: 'Товар' },
+					{ field: 'quantity', headerText: 'Количество' },
+					{ field: 'amount', headerText: 'Цена 1шт' },
+					{ field: 'created', headerText: 'Дата заказа', content: (rowData) => {
+						return CommonScript.convertDateTimeToString(rowData.created); 
+					} },
+					{ field: 'orderStatus', headerText: 'Статус' },
+					{ field: 'totalSum', headerText: 'Сумма' },
+					{ field: 'buyerName', headerText: 'Покупатель' },
+					{ field: 'buyerPhone', headerText: 'Телефон' }
+				],
+				nodeSelect: function(event, ui) {
+					console.log(ui.data);
+				},
+				nodeUnselect: function(event, ui) {
+				},
+				afterExpand: function(event, ui) {
+				},
+				afterCollapse: function(event, ui) {
+				},
+				nodes: function(ui, response) {     
+					$.ajax({
+						type: "GET",
+						url: '@Url.Action("GetOrderList", "Order")',
+						dataType: "json",
+						context: this,
+						success: function (data) {
+							response.call(this, data);
+						}
+					});
+				}
+			});
+	}
+}
+</script>

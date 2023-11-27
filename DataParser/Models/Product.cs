@@ -56,5 +56,10 @@
         /// Наличие
         /// </summary>
         public string Available { get; set; } = string.Empty;
-    }
+
+        /// <summary>
+        /// Тип продукта - подшипник, втулка и т.п.
+        /// </summary>
+        public string ProductTypeName { get; set; } = string.Empty;
+	}
 }

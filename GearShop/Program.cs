@@ -1,11 +1,15 @@
 using System.Text;
+using Azure.Core;
 using GearShop.Contracts;
 using GearShop.Services;
 using GearShop.Services.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Events;
 
 namespace GearShop
 {
@@ -13,7 +17,9 @@ namespace GearShop
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            //Добавить нормальную обработку версий!
+            Console.WriteLine("Version 3");
+			var builder = WebApplication.CreateBuilder(args);
             var config = builder.Configuration;
 
             builder.Services.AddAuthentication(x =>
@@ -45,6 +51,19 @@ namespace GearShop
                 };
             });
 
+            builder.Services.AddDetection(); //Определение типа устройства.
+
+			builder.Services.AddSingleton<IEMailNotifier, EMailNotifier>(x=> 
+	            new EMailNotifier(config["EmailNotifier:senderEmail"],
+		            config["EmailNotifier:senderPassword"],
+		            config["EmailNotifier:companyName"]));
+
+			var provider =builder.Services.BuildServiceProvider();
+
+			builder.Services.AddSingleton<INotifier, Notifier>(x =>
+	            new Notifier(config["EmailNotifier:managerEmail"],
+		            provider.GetService<IEMailNotifier>(), provider.GetService<ILogger<Notifier>>()));
+
             builder.Services.AddSingleton<IFileStorage>(x=>new FileStorage("Upload\\Files"));
             builder.Services.AddScoped<IIdentityService>(x => 
                 new IdentityService(config["JwtSettings:Key"]!, x.GetRequiredService<IGearShopRepository>()));
@@ -71,22 +90,44 @@ namespace GearShop
            builder.Services.AddControllersWithViews()
                .AddRazorRuntimeCompilation(); //Для верстки страниц без перезагрузки сервиса.
 
-            var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
+           Log.Logger = new LoggerConfiguration()
+	           .MinimumLevel.Information()
+	           .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) //Выводить только варнинги Microsoft.
+	           .WriteTo.File(
+		           @"./logs/log.txt",
+		           shared: true, //Доступен всем процессам.
+		           rollingInterval: RollingInterval.Day,
+		           flushToDiskInterval: TimeSpan.FromSeconds(20),
+		           outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}")
+	           .CreateLogger();
+
+			builder.Host.UseSerilog();
+			builder.Services.Configure<ForwardedHeadersOptions>(options =>
+			{
+				options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+			});
+
+			var app = builder.Build();
+			
+
+			// Configure the HTTP request pipeline.
+			if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+			app.UseSerilogRequestLogging();
+
+			app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseCookiePolicy();
 
-            app.UseSession();
+            app.UseDetection(); //Определение типа устройства.
+			app.UseSession();
 
             app.Use(async (context, next) =>
             {
