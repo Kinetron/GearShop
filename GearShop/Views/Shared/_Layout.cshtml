@@ -199,6 +199,21 @@ const CommonScript = {
 
 			return JSON.parse(data);
 		},
-	
+
+		@*Является ли число целым?*@
+		checkInteger(text) {
+			const dig = parseInt(text);
+			if (Number.isNaN(dig)) return false;
+
+			return true;
+		},
+
+		@*Является ли число дробным?*@
+		checkFloat(text) {
+			const dig = parseFloat(text);
+			if (Number.isNaN(dig)) return false;
+
+		return true;
+	}
 }
 </script>

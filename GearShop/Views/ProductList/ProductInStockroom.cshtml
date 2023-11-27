@@ -3,6 +3,7 @@
 @{
 	Layout = "~/Views/Shared/_Layout.cshtml";
 	bool isMobile = (bool)ViewData["IsMobile"];
+	List<KeyValuePair<int, string>> productTypes = (List<KeyValuePair<int, string>>)ViewData["ProductTypes"];
 }
 
 <style>
@@ -70,6 +71,10 @@
 	.select-type-product {
 		font-weight: bold !important;
 	}
+
+	.padding-top {
+		padding-top: 10px;
+	}
 </style>
 
 <h3 class="display-4">Склад</h3>
@@ -120,6 +125,9 @@
 						<label class="ui-widget">В наличии</label>
 					</div>
 				</div>
+				<div>
+			
+				</div>
 				<div id="loaderIndicator" class="loader"><img src="/images/loader.gif" />Загрузка данных...</div>
 				<div id="tbProductList"></div>
 				<div id="productsPaginator"></div>
@@ -131,9 +139,80 @@
 </div>
 
 
+<div id="productEditWindow" title="Добавление" productId="-1">
+		<div class="ui-grid ui-grid-responsive">
+			<div class="ui-grid-row">
+				<div class="ui-grid-col-10">
+					<div id="errorMessageControl"></div>
+				</div>
+			</div>
+			<div class="ui-grid-row">
+					<div class="ui-grid-col-3">
+						<label class="ui-widget">Название</label>
+					</div>
+					<div class="ui-grid-col-7">
+						<input id="pNameInput" type="text" size="25"/>
+					</div>
+				</div>
+				<div class="ui-grid-row padding-top">
+					<div class="ui-grid-col-3">
+						<label class="ui-widget">Тип товара</label>
+					</div>
+					<div class="ui-grid-col-7">
+						<select id="productTypeDropDown" name="filter" size="100">
+							@foreach (var item in productTypes)
+							{
+								<option value="@item.Key">@item.Value</option>
+							}
+							<option value="-1">Выберите тип</option>
+						</select>
+					</div>
+				</div>
+				<div class="ui-grid-row padding-top">
+					<div class="ui-grid-col-3">
+						<label class="ui-widget">Количество</label>
+					</div>
+					<div class="ui-grid-col-7">
+						<input id="pAmountInput" type="text" size="25" />
+					</div>
+				</div>
+				<div class="ui-grid-row padding-top">
+					<div class="ui-grid-col-3">
+						<label class="ui-widget">Цена</label>
+					</div>
+					<div class="ui-grid-col-7">
+						<input id="pCostInput" type="text" size="25" />
+					</div>
+				</div>
+				<div class="ui-grid-row padding-top">
+					<div class="ui-grid-col-3">
+						<label class="ui-widget">Фото</label>
+					</div>
+					<div class="ui-grid-col-7">
+						<form id="form" name="form" action="/UploadFile" enctype="multipart/form-data" method="post" class="block-padding">
+							<div class="buttons">
+								<div class="upload-button">
+									<input id="uploadFilesInput" name="files" type="file" size="1"/>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+				<div class="ui-grid-row padding-top">
+					<div class="ui-grid-col-3">
+					</div>
+					<div class="ui-grid-col-7">
+						<input id="btnUpload" type="submit" value="Загрузить" />
+					    <label class="label-process" id="labelProcess" />
+					</div>
+				</div>
+		</div>	
+</div>
+
 <script type="text/javascript">
 	$(document).ready(function () {
 		ShowcaseScript.init();
+		ProductEditWindowScript.init();
 	});
 
 	@*Витрина магазина.*@
@@ -163,7 +242,8 @@
 		$('#searchInput').puiinputtext();
 
 		$('#tbProductList').puidatatable({
-			caption: 'Список продуктов',
+			caption: '<button id="btn-add" type="button">Добавить</button> <button id="btn-edit" type="button">Изменить</button>' +
+				'<button id="btn-delete" type="button">Удалить</button>',
 			selectionMode: 'single',
 			columns: [
 				{ field: 'name', headerText: 'Наименование' },
@@ -180,7 +260,7 @@
 			datasource: function(callback) {
 				$.ajax({
 					type: "GET",
-					url: '@Url.Action("GetProductList", "ProductList")',
+					url: '@Url.Action("GetProductsFromStockroom", "Stockroom")',
 					data: ShowcaseScript.searchParam(),
 					dataType: "json",
 					beforeSend: function () {
@@ -197,9 +277,31 @@
 						callback.call(this, response);
 					}
 				});
+			},
+			rowSelect: function(event, data) {
+				ProductEditWindowScript.onSelectRow(data);
 			}
 		});
 
+		@*Написать для грида событие инициализации, и вынести это туда*@
+		setTimeout(() => {
+			$('#btn-add').puibutton({
+					icon: 'fa-plus-square',
+					click: ()=> ProductEditWindowScript.showModal(ProductEditWindowScript.addMode)
+			});
+
+			$('#btn-edit').puibutton({
+					icon: 'fa-edit',
+					click: () => ProductEditWindowScript.showModal(ProductEditWindowScript.editMode)
+			});
+
+			$('#btn-delete').puibutton({
+				icon: 'fa-minus-square',
+				click: () => ProductEditWindowScript.deleteRecord()
+		});
+
+		}, 500);
+		
 		$('#searchButton').puibutton({
 			click: function (event) {
 				ShowcaseScript.searchByText($('#searchInput').val());
@@ -277,7 +379,7 @@
 	},
 
 	@*Фильтр по типам продуктов.*@
-		productTypeChanged(typeId) {
+	productTypeChanged(typeId) {
 		$(`#productType${this.productTypeId}`).removeClass("select-type-product");
 		ShowcaseScript.productTypeId = typeId;
 
@@ -286,13 +388,13 @@
 	},
 
 	@*Фильтр по наличию на складе.*@
-		productAvailableChanged(available) {
+	productAvailableChanged(available) {
 		ShowcaseScript.available = available;
 		this.updateProductList();
 	},
 
 	@*Купить товар.*@
-		buy(productId, productName, cost, imageName) {
+	buy(productId, productName, cost, imageName) {
 
 		$('#bay' + productId).text('В корзине');
 		$('#bay' + productId).addClass('in-basket');
@@ -317,9 +419,9 @@
 	},
 
 	@*html отображаемой ячейки.*@
-		createProductCell(product) {
+	createProductCell(product) {
 	@*переделать на шаблон!!!*@
-			let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
+	let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
 							  <div class="product-info">
 												<img align="left" src="/productImages/${product.imageName}" class="image" onclick="ShowcaseScript.imageClick('${product.imageName}');">
 								<div>${product.name}</div>
@@ -335,12 +437,260 @@
 							 </div>
 						</div>`;
 
-		return html;
+	return html;
+		},
+
+		imageClick(name) {
+			event.stopPropagation();
+			$('#lightboxControl').puilightbox('showURL', { src: `/productImages/${name}` });
+		},
+	}
+
+@*Окно добавления/редактирования*@
+const ProductEditWindowScript = {
+	emptyId: -1,
+	selectedRow: { id: -1 },
+	
+	@*Режимы работы окна*@
+	addMode: 1,
+	editMode: 2,
+	deleteMode: 3,
+
+	init() {
+		$('#productEditWindow').puidialog({
+			showEffect: 'fade',
+			hideEffect: 'fade',
+			minimizable: true,
+			maximizable: true,
+			responsive: true,
+			width: 450,
+			minWidth: 450,
+			modal: true,
+			buttons: [
+				{
+					text: 'Отмена',
+					icon: 'fa-close',
+					click: function() {
+						$('#productEditWindow').puidialog('hide');
+					}
+				},
+				{
+					text: 'Ок',
+					icon: 'fa-check',
+					click: ()=> ProductEditWindowScript.clickOk()
+				}
+			]
+		});
+
+		$('#productTypeDropDown').puidropdown({
+			filter: true
+		});
+
+		$('#pNameInput').puiinputtext();
+		$('#pAmountInput').puiinputtext();
+		$('#pCostInput').puiinputtext();
+
+		$('#errorMessageControl').puimessages();
+
+		$("#btnUpload").button().click(function () {
+			ProductEditWindowScript.uploadFilesToStorage('uploadFilesInput');
+		});
 	},
 
-	imageClick(name) {
-		event.stopPropagation();
-		$('#lightboxControl').puilightbox('showURL', { src: `/productImages/${name}` });
+	@*Обработка события выбора записи*@
+	onSelectRow(data) {
+		this.selectedRow = data;
 	},
+
+	showError(text) {
+		$('#errorMessageControl').puimessages('show', 'error', { summary: '', detail: text });
+	},
+
+	@*Скрывает сообщение об ошибке.*@
+	clearMessage() {
+		$('#errorMessageControl').puimessages('clear');
+	},
+
+	validate() {
+		this.clearMessage();
+
+		const data = {
+			name: $('#pNameInput').val(),
+			productTypeId: $('#productTypeDropDown').puidropdown('getSelectedValue'),
+			amount: $('#pAmountInput').val(),
+			cost: $('#pCostInput').val()
+		};
+
+		if (data.name.length === 0) {
+			this.showError('Введите название');
+			return false;
+		}
+		
+		if (data.productTypeId == null || data.productTypeId == this.emptyId) {
+			this.showError('Не выбран тип');
+			return false;
+		}
+
+		if (data.amount.length === 0) {
+			this.showError('Введите количество товара на складе');
+			return false;
+		}
+
+		if (data.cost.length === 0) {
+			this.showError('Введите цену');
+			return false;
+		}
+		
+		if (!CommonScript.checkInteger(data.amount)) {
+			this.showError('Количество не число');
+			return false;
+		}
+
+		if (!CommonScript.checkFloat(data.cost)) {
+			this.showError('Сумма не число');
+			return false;
+		}
+		
+		return data;
+	},
+
+	clickOk() {
+		const data = this.validate();
+		if (data == false) return false;
+
+		data.id = $('#productEditWindow').attr('productId');
+		
+		let action = 'CreateProduct'; @*Добавление товара*@
+		
+		@*Редактирование.*@
+		if (data.id != this.emptyId) {
+			action = 'UpdateProduct';
+			data.imageName = this.selectedRow.imageName;
+		}
+
+		@*Имя картинки если есть. Возможно ее изменили.*@
+		const files = document.getElementById('uploadFilesInput').files;
+
+		if (files.length > 0) {
+			data.imageName = files[0].name;
+		}
+		
+		$.ajax({
+			type: "POST",
+			url: `/Stockroom/${action}`,
+			data: {json: JSON.stringify(data)},
+			beforeSend: function () {
+				$('#loaderIndicator').show();
+			},
+			error: function() {
+				$('#loaderIndicator').hide();
+				this.showError('Ошибка сохранения данных.');
+			},
+			context: this,
+			success: function() {
+				$('#loaderIndicator').hide();
+				CommonScript.showMessage('info', 'Успешно', 'Данные успешно сохранены.');
+				$('#productEditWindow').puidialog('hide');
+				ShowcaseScript.updateProductList();
+			}
+		});
+
+		return true;
+	},
+
+	showModal(mode) {
+	@*Пока не ясно как изменить название окна, контрол не очень рабочий.*@
+
+		if (mode == this.addMode) {
+			$('#productEditWindow').puidialog('show');
+			return;
+		}
+
+		if (mode == this.editMode) {
+			if (!this.getDataForEditMode()) return false;
+
+			$('#productEditWindow').puidialog('show');
+			return;
+		}
+	},
+
+	@*Заполняет форму в режиме редактирования.*@
+	getDataForEditMode() {
+		if (this.selectedRow.id == -1) {
+			CommonScript.showMessage('error', 'Ошибка', 'Не выбрана запись');
+			return false;
+		}
+
+		$('#productEditWindow').attr('productId', this.selectedRow.id);
+		$('#pNameInput').val(this.selectedRow.name);
+		$('#pAmountInput').val(this.selectedRow.amount);
+		$('#pCostInput').val(this.selectedRow.cost);
+
+		$('#productTypeDropDown').puidropdown('selectValue', this.selectedRow.productTypeId);
+
+		return true;
+	},
+
+	@*Загрузка файлов в хранилище.*@
+	uploadFilesToStorage(inputId) {
+
+		const files = document.getElementById(inputId).files;
+		const formData = new FormData();
+		
+		const fileNames = [];
+
+		for (let i = 0; i != files.length; i++) {
+			formData.append("files", files[i]);
+			fileNames.push(files[i].name);
+		}
+
+		let labelProcess = $('#labelProcess');
+		labelProcess.text('Загрузка файлов в хранилище…');
+		labelProcess.show();
+		
+		$.ajax(
+			{
+				url: "/LoadFiles/UploadProductImages",
+				data: formData,
+				processData: false,
+				contentType: false,
+				type: "POST",
+				success: function(data) {
+					labelProcess.text('Успешно.');
+				},
+				error: function() {
+					this.showError('Ошибка загрузки файлов');
+				}
+			}
+		);
+	},
+
+	@*Удаление записи.*@
+	deleteRecord() {
+		if (this.selectedRow.id == -1) {
+			CommonScript.showMessage('error', 'Ошибка', 'Не выбрана запись');
+			return false;
+		}
+
+		$.ajax({
+			type: "POST",
+			url: '@Url.Action("DeleteProduct","Stockroom")',
+			data: { id: this.selectedRow.id },
+			beforeSend: function () {
+				$('#loaderIndicator').show();
+			},
+			error: function () {
+				$('#loaderIndicator').hide();
+				this.showError('Ошибка сохранения данных.');
+			},
+			context: this,
+			success: function () {
+				$('#loaderIndicator').hide();
+				CommonScript.showMessage('info', 'Успешно', 'Товар удален.');
+				ShowcaseScript.updateProductList();
+			}
+		});
 	}
+}
+
 </script>

@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using Serilog;
 using OrderItemDto = GearShop.Models.OrderItemDto;
 using System.Net;
+using Product = GearShop.Models.Entities.Product;
 
 namespace GearShop.Services.Repository
 {
@@ -24,7 +25,13 @@ namespace GearShop.Services.Repository
     {
         private readonly GearShopDbContext _dbContext;
 
-        public GearShopRepository(GearShopDbContext dbContext)
+        /// <summary>
+        /// Название источника в таблице InfoSource для добавления данных из web.
+        /// </summary>
+        private const string WebSourceName = "Добавлен с сайта";
+
+
+		public GearShopRepository(GearShopDbContext dbContext)
         {
             _dbContext = dbContext;
         }
@@ -127,6 +134,47 @@ namespace GearShop.Services.Repository
 				return data.Where(x=>x.Name.Contains(searchText)).Count();
 			}
         }
+
+		/// <summary>
+		/// Получает список всех продуктов на складе.
+		/// </summary>
+		/// <returns></returns>
+		public List<ProductDto> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
+		{
+			var data = _dbContext.Products.Where(x => x.Deleted == 0);
+
+			if (available)
+			{
+				data = data.Where(x => x.Rest > 0);
+			}
+
+			if (productTypeId > 0)
+			{
+				data = data.Where(x => x.ProductTypeId == productTypeId);
+			}
+
+			if (!string.IsNullOrEmpty(searchText))
+			{
+				data = data.Where(x => x.Name.Contains(searchText));
+			}
+
+			//Переделать на нормальный sql, будет гораздо быстрее.
+
+			return data.Select(product =>
+					new ProductDto()
+					{
+						Id = product.Id,
+						ProductTypeId = product.ProductTypeId,
+						Name = product.Name,
+						Cost = product.RetailCost.Value,
+						Amount = product.Rest.Value,
+						ImageName = string.IsNullOrEmpty(product.ImageName) ? "NoPhoto.png" : product.ImageName
+					}
+				)
+				.Skip((currentPage - 1) * itemsPerPage)
+				.Take(itemsPerPage)
+				.ToList();
+		}
 
 		/// <summary>
 		/// Проверяет наличие guid в БД. Если нет – добавляет новую запись.
@@ -358,6 +406,120 @@ namespace GearShop.Services.Repository
 		{
 			return await _dbContext.Products.Where(p=>!string.IsNullOrEmpty(p.ImageName)).Select(p => new KeyValuePair<string, string>(p.Name, p.ImageName)
 			).ToListAsync();
+		}
+
+		/// <summary>
+		/// Добавляет продукт в прайс.
+		/// </summary>
+		/// <param name="model"></param>
+		/// <returns></returns>
+		public async Task<bool> CreateProductAsync(ProductDto model)
+		{
+			//Существует ли еще тип продукта в БД?
+			var type = await _dbContext.ProductTypes.FirstOrDefaultAsync(t=>t.Id == model.ProductTypeId);
+
+			if (type == null)
+			{
+				Log.Error($"Ошибка. Не найден тип продукта с id={model.ProductTypeId}");
+				return false;
+			}
+
+			//Идентификатор источника данных
+			var infoSourceId = await _dbContext.InfoSource.FirstOrDefaultAsync(x => x.Name == WebSourceName);
+			if (infoSourceId == null)
+			{
+				Log.Error($"Not found id for InfoSource with name {WebSourceName}");
+				return false;
+			}
+			
+			try
+			{
+               Product product = new Product()
+				{
+					Name = model.Name,
+					RetailCost = model.Cost,
+					ImageName = model.ImageName,
+					Rest = model.Amount,
+					ProductTypeId = model.ProductTypeId,
+					InfoSourceId = infoSourceId.Id,
+				};
+
+               await _dbContext.Products.AddAsync(product);
+               await _dbContext.SaveChangesAsync();
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+
+			return true;
+		}
+
+		/// <summary>
+		/// Обновляет информацию о продукте в прайсе.
+		/// </summary>
+		/// <param name="model"></param>
+		/// <returns></returns>
+		public async Task<bool> UpdateProductAsync(ProductDto model)
+		{
+			//Существует ли еще тип продукта в БД?
+			var type = await _dbContext.ProductTypes.FirstOrDefaultAsync(t => t.Id == model.ProductTypeId);
+
+			if (type == null)
+			{
+				Log.Error($"Ошибка. Не найден тип продукта с id={model.ProductTypeId}");
+				return false;
+			}
+
+			try
+			{
+				var product = await _dbContext.Products.FirstOrDefaultAsync(p=>p.Id == model.Id);
+				if (product == null)
+				{
+					Log.Error($"Ошибка. Не найден продукт с id={model.Id}");
+					return false;
+				}
+
+
+				product.Name = model.Name;
+				product.RetailCost = model.Cost;
+				product.ImageName = model.ImageName;
+				product.Rest = model.Amount;
+				product.ProductTypeId = model.ProductTypeId;
+				
+				await _dbContext.SaveChangesAsync();
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+
+			return true;
+		}
+
+		public async Task<bool> DeleteProductAsync(int id)
+		{
+			try
+			{
+				var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
+				if (product == null)
+				{
+					Log.Error($"Ошибка. Не найден продукт с id={id}");
+					return false;
+				}
+
+				product.Deleted = 1;
+				await _dbContext.SaveChangesAsync();
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+
+			return true;
 		}
     }
 }
