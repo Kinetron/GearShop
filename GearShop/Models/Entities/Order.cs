@@ -20,4 +20,9 @@ public class Order
     public DateTime? Changed { get; set; }
 
     public string? Changer { get; set; }
+
+    /// <summary>
+    /// Позиции(ссылки на продукты) в заказе.
+    /// </summary>
+    public List<OrderItem> OrderItems { get; set; }
 }

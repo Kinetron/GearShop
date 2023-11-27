@@ -8,6 +8,12 @@ using System.Threading.Tasks;
 using DataParser.Models;
 using IronXL;
 using DataParser.Helpers;
+using IronXL.Drawing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Xml.Linq;
+using System.Security.Cryptography;
+using System.IO;
+
 
 namespace DataParser
 {
@@ -19,10 +25,28 @@ namespace DataParser
     /// </summary>
     public class Excel1сShopParser2022Format
     {
+	    private WorkBook _workBook = null;
+
         /// <summary>
-        /// Часть строки в первой ячейки прайс листа, на основании которой мы понимаем что нашли первый товар в списке.
+        /// Путь к обрабатываемому файлу.
         /// </summary>
-        private const string BeginPriceLabel = "шт";
+	    private string _workBookPath = null;
+
+		/// <summary>
+		/// Часть строки в первой ячейки прайс листа, на основании которой мы понимаем что нашли первый товар в списке.
+		/// </summary>
+		private const string BeginPriceLabel = "шт";
+
+		/// <summary>
+		/// Папка в которую сохраняются картинки из excel файла.
+		/// </summary>
+		public const string ImageFolder = "Images";
+
+		/// <summary>
+		/// Псевдо идентификаторы картинок(имена продуктов)
+		/// id-название картинки без расширения, name - название продукта к которому привязана картинка.
+		/// </summary>
+		private List<IdName> _imageIds = new List<IdName>();
 
         /// <summary>
         /// Массив для определения буквы по индексу, нужен только для парсинга с .xls
@@ -48,21 +72,106 @@ namespace DataParser
 
         /// <summary>
         /// Связь свойств из модели(_productModelPropertyNames) с номерами ячеек из excel файла.
-        /// Алгоритм ищет первое не нулевое значение. Название товара может быть не в первой ячейке, а в диапазоне 0-13
+        /// Для строк с картинками.
         /// </summary>
         private readonly int[] _sourceColumnAssociation =
         {
-            1, 14, 15, 16, 17, 18, 19 //Номер ячейки в файле.
+            4, 13, 14, 15, 16, 17, 18 //Номер ячейки в файле.
         };
-        
-        /// <summary>
-        /// Сообщение об ошибке.
-        /// </summary>
-        public string LastError { get; private set; }
 
+        /// <summary>
+        /// Счетчик для получения идентификаторов картинок.
+        /// </summary>
+        private int _imageIdCount;
+
+		/// <summary>
+		/// Номер ячейки содержащей название продукта.
+		/// </summary>
+		private readonly int _productNamePos = 4;
+
+		/// <summary>
+		/// Сообщение об ошибке.
+		/// </summary>
+		public string LastError { get; private set; }
+
+		/// <summary>
+		/// Возвращает следующий идентификатор картинки.
+		/// </summary>
+		/// <returns></returns>
+		private int GetNextImageId()
+		{
+			return ++_imageIdCount;
+		}
+
+		/// <summary>
+		/// Открывает эксель файл
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <returns></returns>
+		public bool OpenBook(string filePath)
+        {
+	        // Считывание данных с файла по пути filePath
+	        try
+	        {
+		        _workBook = WorkBook.Load(filePath);
+		        _workBookPath = filePath;
+	        }
+	        catch (IOException ex)
+	        {
+		        LastError = $"Ошибка при чтении файла {Path.GetFileName(filePath)}.";
+		        return false;
+	        }
+	        catch (Exception ex)
+	        {
+		        LastError = $"Исключение: {ex.Message}";
+		        return false;
+	        }
+
+	        return true;
+        }
+
+		/// <summary>
+		/// Задает идентификаторы продуктов к которым привязаны картинки.
+		/// В качестве идентификатора выступает имя.
+		/// В прайсе нет идентификаторов продукта и картинок.
+		/// </summary>
+		/// <param name=""></param>
+		public void SetImageInfo(List<KeyValuePair<string, string>> info)
+		{
+			_imageIds = new List<IdName>();
+            
+			info.ForEach(x =>
+            {
+	            int index = x.Value.IndexOf(".");
+	            string digStr = x.Value.Substring(0, index);
+
+	            if (int.TryParse(digStr, out int dig))
+	            {
+                    _imageIds.Add(new IdName()
+                    {
+                        Name = x.Key,
+                        Id = dig
+                    });
+	            }
+            });
+
+			//Получение текущего значение идентификатора картинки. Если не первый раз.
+			if (info.Count > 0)
+			{
+				_imageIdCount = _imageIds.Max(x => x.Id);
+			}
+		}
+
+        /// <summary>
+        /// Парсит файл.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="lineLimit"></param>
+        /// <returns></returns>
         public List<Product> ParseFile(string filePath, int lineLimit = 0)
         {
-            return ParseFile(filePath, (curent, total)=>{}, lineLimit);
+            //20минут файл из 12000. Старая версия.
+	        return ParseFile(filePath, (curent, total)=>{}, lineLimit);
         }
 
         /// <summary>
@@ -92,8 +201,8 @@ namespace DataParser
             }
 
             WorkSheet sheet = workBook.WorkSheets[0]; // Выбор первого листа
-
-            int currentRowIndex = 1; //Индекс строки.
+            
+			int currentRowIndex = 1; //Индекс строки.
             string[] headers = null; //Заголовки всех колонок 
 
             (headers, currentRowIndex) = GetLastHeader(sheet);
@@ -266,11 +375,278 @@ namespace DataParser
                     info.Add(item.WholesaleCost.ToString());
                     info.Add(item.Rest.ToString());
                     info.Add(item.Available);
+                    info.Add(item.ProductTypeName);
 
-                    string text = string.Join(separator, info);
+					string text = string.Join(separator, info);
                     writer.WriteLine(text);
                 }
             }
         }
-    }
+
+        /// <summary>
+        /// Ускоренный алгоритм.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="progressInfo"></param>
+        /// <param name="lineLimit"></param>
+        /// <returns></returns>
+        public List<Product> ParseFileFast(Action<int, int> progressInfo, int lineLimit = 0)
+        {
+	        WorkSheet sheet = _workBook.WorkSheets[0]; // Выбор первого листа
+	        string tempFile = Path.Combine(Path.GetDirectoryName(_workBookPath), "temp.txt");
+
+			//Сохранение в csv excel из 12000 строк занимает 5сек, и его обработка гораздо быстрее чем проход по таблице.
+			sheet.SaveAsCsv(tempFile, "|");
+			var products = ParseRawCsv(tempFile, '|');
+			File.Delete(tempFile);
+			return products;
+        }
+
+        /// <summary>
+        /// Обрабатывает не фильтрованный файл. 12 000 строк обрабатываются почти мгновенно.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        private List<Product> ParseRawCsv(string filePath, char separator)
+        {
+	        List<Product> products = new List<Product>();
+
+            bool isProductLine = false;
+
+            using (StreamReader file = new StreamReader(filePath))
+            {
+	            string line = null;
+
+	            try
+	            {
+		            while ((line = file.ReadLine()) != null)
+		            {
+                        if(string.IsNullOrEmpty(line)) break; //Конец файла.
+
+			            string[] columns = line.Split(separator);
+
+			            //Немного ускоряем работу игнорируя анализ строк.
+			            if (!isProductLine && !IsProductLine(columns)) continue;
+			            isProductLine = true;
+
+			            //Пропуск строк содержащих картинки.
+			            if (string.IsNullOrEmpty(columns[_sourceColumnAssociation[0]])) continue;
+
+
+			            Product product = ParseRowRawCsv(columns);
+			            if (product == null)
+			            {
+				            return null;
+			            }
+
+                        if(string.IsNullOrEmpty(product.Name)) continue;;
+
+			            FilterProduct(product);
+                        
+                        //Для записей для которых есть картинки.
+                        if (!string.IsNullOrEmpty(product.ImageName))
+                        {
+	                        var imgId = _imageIds.FirstOrDefault(x => x.Name == product.Name);
+
+	                        if (imgId == null) //На сервере нет картинки.
+							{
+		                        //Добавляем данные для идентификации картинки при привязки к имени.
+		                        var info = new IdName()
+		                        {
+			                        Id = GetNextImageId(),
+			                        Name = product.Name,
+		                        };
+
+		                        _imageIds.Add(info);
+
+		                        //Формируем название будущей картинки. Библиотека выгружает только png.
+		                        product.ImageName = $"{info.Id}.png";
+							}
+	                        else
+	                        {
+								//Обязательно копируем название картинки с сервера. В прайсе нет идентификаторов.
+								product.ImageName = $"{imgId.Id}.png";
+							}
+                        }
+                        
+			            products.Add(product);
+		            }
+	            }
+	            catch (Exception e)
+	            {
+		            LastError = $"Исключение для {line} " +e.Message +e.StackTrace;
+				}
+            }
+
+            return products;
+        }
+
+		/// <summary>
+		/// Содержит ли данная строка информацию о товаре.
+		/// </summary>
+		/// <param name="columns"></param>
+		/// <returns></returns>
+		private bool IsProductLine(string[] columns)
+        {
+	        string productName = columns[_sourceColumnAssociation[0]];
+            return productName.Contains(BeginPriceLabel);
+        }
+
+		/// <summary>
+		/// Конвертирует строку из файла в товар.
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		private Product ParseRowRawCsv(string[] columns)
+		{
+			columns = columns.Select(x => x.Replace("#NULL!", "")).ToArray();
+
+			Product product = new Product();
+			Type type = typeof(Product);
+
+			//Цикл по свойствам сущности.
+			for (int i = 0; i < _productModelPropertyNames.Length; i++)
+			{
+				//Получаем значение для данного свойства. 
+				string cellText = columns[_sourceColumnAssociation[i]];
+
+                if(string.IsNullOrEmpty(cellText)) continue; //Ячейка не заполнена.
+
+	            //Получаем свойство по имени.
+				PropertyInfo property = type.GetProperty(_productModelPropertyNames[i]);
+				if (property != null)
+				{
+					object propertyValue = property.GetValue(product);
+
+					//Удаляем внутренние nbsp для сум.
+					if (propertyValue.GetType() == typeof(decimal) || propertyValue.GetType() == typeof(int))
+					{
+						char nbsp = (char)160;
+						cellText = cellText.Replace(nbsp, ' ').Replace(" ", "");
+					}
+                    
+					//Для свойств ссылочного типа обязательно значение отличное от null. Иначе исключение.
+					object value = TypesConverter.ConvertTypes(propertyValue, cellText);
+					if (value == null)
+					{
+						//Так поступает библиотека обработки заполняя пустые значения.
+						if (cellText.Contains("#NULL!"))
+						{
+							LastError = "Измените Excel file, разрешите редактирование и сохраните.";
+							return null;
+						}
+
+						LastError =
+							$"Не удалось преобразовать {cellText} в тип данных {property.PropertyType.Name} для {product.Name}.";
+						return null;
+					}
+
+					property.SetValue(product, value, null);
+				}
+			}
+
+			return product;
+		}
+
+		/// <summary>
+		/// Удаляет лишние данные из модели
+		/// </summary>
+		private void FilterProduct(Product product)
+		{
+			product.Name = product.Name.Replace(", , шт", "");
+		}
+
+        /// <summary>
+        /// Сохраняет картинки.
+        /// </summary>
+		public bool SaveImages(Action<int, int> progressInfo)
+        {
+	        LastError = string.Empty;
+
+			if (!Directory.Exists(ImageFolder))
+			{
+				Directory.CreateDirectory(ImageFolder);
+			}
+			else
+			{
+				CleanDir(ImageFolder);
+			}
+			
+			WorkSheet sheet = _workBook.WorkSheets[0]; // Выбор первого листа
+
+            List<string> error = new List<string>();
+			try
+			{
+				List<IronXL.Drawing.Images.IImage> images = sheet.Images;
+				int totalRows = images.Count;
+				int currentRow = 1; //Текущая обработанная строка.
+                
+				foreach (IronXL.Drawing.Images.IImage image in images)
+				{
+					Position position = image.Position;
+
+					//На основании данных картинки, определяем имя продукта к которому она относиться.
+					Product product = new Product();
+					product.Name = GetProductName(sheet, position.Row2);
+					FilterProduct(product);
+
+					//Получаем идентификатор для продукта к которому привязана картинка
+					var productId = _imageIds.FirstOrDefault(p => p.Name == product.Name);
+					if (productId == null)
+					{
+						//Добавить обработку для странных имен " "" """
+						string text = $"Не найден идентификатор для продукта {product.Name}. Картинки не будет.";
+						error.Add(text);
+						continue;
+					}
+
+					string imagePath = Path.Combine(ImageFolder, $"{productId.Id}.png");
+					File.WriteAllBytes(imagePath, image.Data);
+
+					progressInfo(currentRow, totalRows); //Передаем пользователю о прогрессе обработки строк.
+					currentRow++;
+				}
+
+				progressInfo(totalRows, totalRows);
+			}
+			catch (Exception e)
+			{
+                LastError = $"Возможно нужно открыть файл. Нажать <Разрешить редактирование>. Сохранить.  Исключение {e.Message}  {e.StackTrace}";
+				return false;
+			}
+			
+			//Удалить после доработок страных имен
+			if (error.Any())
+			{
+				LastError = string.Join(Environment.NewLine, error);
+			}
+
+			return true;
+		}
+
+		/// <summary>
+		/// Возвращает имя продукта из таблицы.
+		/// </summary>
+		/// <param name="sheet"></param>
+		/// <param name="row"></param>
+		/// <returns></returns>
+		private string GetProductName(WorkSheet sheet, int row)
+        {
+			return sheet[_lettersArray[_productNamePos] + row.ToString()].Value.ToString();
+        }
+
+
+        /// <summary>
+        /// Удаляет все файлы в директории.
+        /// </summary>
+        /// <param name="dir"></param>
+		private void CleanDir(string dir)
+		{
+			foreach (string file in Directory.GetFiles(dir))
+			{
+				FileInfo fi = new FileInfo(file);
+				fi.Delete();
+			}
+		}
+	}
 }

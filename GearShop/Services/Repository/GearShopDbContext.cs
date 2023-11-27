@@ -27,6 +27,11 @@ namespace GearShop.Services.Repository
         public DbSet<Product> Products { get; set; }
 
 		/// <summary>
+		/// Типы продуктов.
+		/// </summary>
+        public DbSet<ProductType> ProductTypes { get; set; }
+
+		/// <summary>
 		/// Не зарегистрированые покупатели.
 		/// </summary>
 		public DbSet<NonRegisteredBuyer> NonRegisteredBuyers { get; set; }
@@ -45,13 +50,19 @@ namespace GearShop.Services.Repository
 		/// Дополнительная информация о заказе.
 		/// </summary>
 		public DbSet<OrderInfo> OrderInfo { get; set; }
-
-		/// <summary>
-		/// Картинки продуктов.
-		/// </summary>
-		public DbSet<ProductImage> ProductImages { get; set; }
 		
 		public DbSet<SlaiderMainPage> SlaiderMainPage { get; set; }
+
+		/// <summary>
+		/// Источник данных сведений о продукте(Из прайса, добавлен на сайте)
+		/// </summary>
+		public DbSet<InfoSource> InfoSource { get; set; }
+
+		/// <summary>
+		/// Хранит информацию о процессе синхронизации данных. Для прогресс бара.
+		/// </summary>
+		//public DbSet<PriceSynchronizeStatus> PriceSynchronizeStatus { get; set; }
+		
 		public string GetUserGroupRole(string userName)
         {
            return this.Database.SqlQueryRaw<string>("SELECT [dbo].GetUserGroupRole(@userName) as value",
@@ -88,6 +99,17 @@ namespace GearShop.Services.Repository
 					tb.HasTrigger("tr_OrderItems_LogUpd");
 				});
 			});
+
+			modelBuilder.Entity<InfoSource>(entity =>
+			{
+				entity.ToTable(tb =>
+				{
+					tb.HasTrigger("tr_InfoSource_LogIns");
+					tb.HasTrigger("tr_InfoSource_LogUpd");
+				});
+			});
+
+			//modelBuilder.Entity<PriceSynchronizeStatus>(builder => { builder.HasNoKey(); });
 		}
     }
 }

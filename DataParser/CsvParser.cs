@@ -21,8 +21,8 @@ namespace DataParser
         /// </summary>
         private readonly string[] _productModelPropertyNames =
         {
-            "Name", "ImageName", "PurchaseCost", "RetailCost", "WholesaleCost", "Rest", "Available"
-        };
+            "Name", "ImageName", "PurchaseCost", "RetailCost", "WholesaleCost", "Rest", "Available", "ProductTypeName"
+		};
 
         /// <summary>
         /// Сообщение об ошибке.

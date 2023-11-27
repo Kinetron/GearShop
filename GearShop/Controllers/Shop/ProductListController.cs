@@ -1,49 +1,79 @@
 ﻿using GearShop.Contracts;
 using GearShop.Models.Dto.Products;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
+using Wangkanai.Detection.Models;
+using Wangkanai.Detection.Services;
 
 namespace GearShop.Controllers.Shop
 {
+    /// <summary>
+    /// Основная страница магазина. Список продуктов.
+    /// </summary>
     public class ProductListController : Controller
     {
 	    private readonly IGearShopRepository _gearShopRepository;
+	    private readonly IDetectionService _detectionService;
 
-		/// <summary>
+	    /// <summary>
 		/// Записей на одну отображаемую страницу.
 		/// </summary>
 		private const int recordPerPage = 9;
 
-	    public ProductListController(IGearShopRepository gearShopRepository)
+	    public ProductListController(IGearShopRepository gearShopRepository, IDetectionService detectionService)
 	    {
 		    _gearShopRepository = gearShopRepository;
+		    _detectionService = detectionService;
 	    }
 
         // GET: ProductListController
         public ActionResult Index()
-        {
-            return View();
+		{
+			ViewData["ProductTypes"] = _gearShopRepository.GetProductTypesAsync().Result
+				.Select(x=>new KeyValuePair<int, string>(x.Id, x.Name)).ToList();
+
+			ViewData["IsMobile"] = _detectionService.Device.Type != Device.Desktop;
+
+			return View();
         }
 
-        public JsonResult GetProductList(int currentPage, string searchText)
+        public JsonResult GetProductList(int currentPage, string searchText, int productTypeId, bool available)
         {
-	        return Json(_gearShopRepository.GetProducts(currentPage, recordPerPage, searchText));
+	        return Json(_gearShopRepository.GetProducts(currentPage, recordPerPage, searchText, productTypeId, available));
         }
 
         /// <summary>
         /// Получает параметры пейдженации страниц.
         /// </summary>
         /// <returns></returns>
-        public JsonResult GetPaginateData(string searchText)
+        public JsonResult GetPaginateData(string searchText, int productTypeId, bool available)
         {
-	        int totalRecords = _gearShopRepository.GetProductCount(searchText);
+	        int totalRecords = _gearShopRepository.GetProductCount(searchText, productTypeId, available);
             int rows = totalRecords / recordPerPage;
 
 	        return Json(new {rows = rows, totalRecords = totalRecords});
         }
 
-		// GET: ProductListController/Details/5
-		public ActionResult Details(int id)
+		/// <summary>
+		/// Продукты на складе.
+		/// </summary>
+		/// <returns></returns>
+		[Authorize(Roles = "Admin")]
+		public ActionResult ProductInStockroom()
+        {
+	        ViewData["ProductTypes"] = _gearShopRepository.GetProductTypesAsync().Result
+		        .Select(x => new KeyValuePair<int, string>(x.Id, x.Name)).ToList();
+
+	        ViewData["IsMobile"] = _detectionService.Device.Type != Device.Desktop;
+
+			return View();
+        }
+
+
+        // GET: ProductListController/Details/5
+			public ActionResult Details(int id)
         {
             return View();
         }

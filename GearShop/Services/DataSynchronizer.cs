@@ -1,8 +1,11 @@
 ﻿using DataParser;
 using GearShop.Contracts;
+using GearShop.Controllers;
 using GearShop.Models.Entities;
 using GearShop.Services.Repository;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GearShop.Services
 {
@@ -11,12 +14,25 @@ namespace GearShop.Services
     /// </summary>
     public class DataSynchronizer : IDataSynchronizer
 	{
+		/// <summary>
+		/// Шаг через который будет добавлена информация о процессе синхронизации.
+		/// </summary>
+		private const int StepProgress = 100;
 		private readonly GearShopDbContext _dbContext;
+		private readonly ILogger<HomeController> _logger;
 
-		public DataSynchronizer(GearShopDbContext dbContext)
+		/// <summary>
+		/// Название источника в таблице InfoSource для синхронизации прайс листа.
+		/// </summary>
+		private const string PriceSourceName = "Из прайса";
+
+		public DataSynchronizer(GearShopDbContext dbContext, ILogger<HomeController> logger)
 		{
 			_dbContext = dbContext;
+			_logger = logger;
 		}
+
+		public string LastError { get; private set; }
 
 		/// <summary>
 		/// Синхронизирует данные в БД с файлом CSV.
@@ -29,14 +45,47 @@ namespace GearShop.Services
 			List<DataParser.Models.Product> products = parser.ParseFile(fileName, '|');
 			if (products == null)
 			{
-				//_sendErrorToUser($"{parser.LastError}{Environment.NewLine}");
+				_logger.LogError("Empty model");
 				return false;
 			}
 
-			//using (var dbContextTransaction = _dbContext.BeginTransaction())
-			//{
+
+			int currentRow = 1;
+
+			var info = new PriceSynchronizeStatus()
+			{
+				Current = currentRow,
+				Total = products.Count()
+			};
+
+			//Информация для прогресс бара.
+			//_dbContext.PriceSynchronizeStatus.Add(info);
+
+			//_dbContext.SaveChanges();
+
+			DateTime beginDt = DateTime.Now;
+
+			//Идентификатор продукта с не известными типом.
+			int defaultTypeId = _dbContext.ProductTypes.First(x=>x.Name == "Прочие").Id;
+
+			//Идентификатор источника данных
+			int? infoSourceId = _dbContext.InfoSource.FirstOrDefault(x => x.Name == PriceSourceName)?.Id;
+			if (infoSourceId == null)
+			{
+				_logger.LogError($"Not found id for InfoSource with name {PriceSourceName}");
+				return false;
+			}
+
+			try
+			{
 				foreach (var item in products)
 				{
+					//Тип продукта.
+					int? productTypeId =
+						_dbContext.ProductTypes.FirstOrDefault(x => x.Name == item.ProductTypeName)?.Id;
+
+					if (!productTypeId.HasValue) productTypeId = defaultTypeId;
+
 					Product product = new Product()
 					{
 						Name = item.Name,
@@ -45,26 +94,120 @@ namespace GearShop.Services
 						WholesaleCost = item.WholesaleCost,
 						Rest = item.Rest,
 						ImageName = item.ImageName,
-						Available = item.Available
+						Available = item.Available,
+						ProductTypeId = productTypeId.Value,
+						InfoSourceId = infoSourceId.Value 
 					};
 
-					_dbContext.Products.Add(product);
-					try
+					//Существует ли продукт?
+					if (_dbContext.Products.Count(x => x.Name == item.Name) > 0)
 					{
-						_dbContext.SaveChanges();
+						Product exists = _dbContext.Products.First(x => x.Name == item.Name);
+						exists.Deleted = 0;
+						exists.PurchaseCost = item.PurchaseCost;
+						exists.RetailCost = item.RetailCost;
+						exists.WholesaleCost = item.WholesaleCost;
+						exists.Rest = item.Rest;
+						exists.Available = item.Available;
+						exists.ProductTypeId = productTypeId.Value;
+						exists.Changed = DateTime.Now;
+						
+						//Картинки нет. Добавим.
+						if (string.IsNullOrEmpty(exists.ImageName))
+						{
+							exists.ImageName =  item.ImageName;
+						}
 					}
-					catch (Exception e)
+					else
 					{
-						Console.WriteLine(e);
-						throw;
+						product.Created = DateTime.Now;
+						product.Changed = product.Created;
+						_dbContext.Products.Add(product);
 					}
-					
+
+					//currentRow++;
+					//if (currentRow % StepProgress == 0)
+					//{
+					//	var progress = _dbContext.PriceSynchronizeStatus.First();
+					//	progress.Current = currentRow;
+					//}
+
+					_dbContext.SaveChanges();
 				}
-				
-			//	dbContextTransaction.Commit();
-			//}
+
+				//Все продукты которых нет в прайс листе будут иметь дату раньше.
+				// Удалим продукты которых нет в прайсе.
+				DeleteEarlyProducts(beginDt, infoSourceId.Value); //Обновить все продукты 
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError($"Ошибка обновления строк", ex);
+			}
 
 			return true;
+		}
+
+		/// <summary>
+		/// Удаляет продукты которых нет в прайсе.
+		/// </summary>
+		/// <param name="beginDt"></param>
+		/// <param name="infoSourceId"></param>
+		private void DeleteEarlyProducts(DateTime beginDt, int infoSourceId)
+		{
+			var products = _dbContext.Products.Where(p => p.Changed < beginDt && p.InfoSourceId == infoSourceId).ToList();
+			products.ForEach(p=>
+			{
+				p.Deleted = 1;
+				p.Changed = DateTime.Now;
+			});
+
+			_dbContext.SaveChanges();
+		}
+
+		/// <summary>
+		/// Синхронизация картинок продуктов.
+		/// </summary>
+		/// <param name="fileName"></param>
+		/// <returns></returns>
+		public bool ProductImagesSynchronize(string fileName, string storagePath)
+		{
+			string zipFile = Path.Combine(storagePath, fileName);
+			string imageDir = Path.Combine(storagePath, Path.GetFileNameWithoutExtension(fileName));
+
+			try
+			{
+				CleanDir(imageDir);
+				Archivator.UnpackSplitZip(zipFile, imageDir);
+				List<string> files = Directory.GetFiles(imageDir, "*.*", SearchOption.AllDirectories).ToList();
+				
+				foreach (string file in files)
+				{
+					FileInfo mFile = new FileInfo(file);
+					mFile.MoveTo(Path.Combine(@"wwwroot", "productImages", mFile.Name), true);
+				}
+			}
+			catch (Exception ex)
+			{
+				LastError = $"Исключение {ex.Message} {ex.StackTrace}";
+				return false;
+			}
+
+			return true;
+		}
+
+		/// <summary>
+		/// Удаляет все файлы в директории.
+		/// </summary>
+		/// <param name="dir"></param>
+		private void CleanDir(string dir)
+		{
+			if (!Directory.Exists(dir)) return;
+
+			foreach (string file in Directory.GetFiles(dir))
+			{
+				FileInfo fi = new FileInfo(file);
+				fi.Delete();
+			}
 		}
 	}
 }

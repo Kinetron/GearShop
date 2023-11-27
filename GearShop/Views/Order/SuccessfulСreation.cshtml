@@ -1,7 +1,26 @@
 ﻿@model int
 
+<style>
+
+	.shoplink {
+		color: green!important;
+		padding: 3px;
+	}
+</style>
+
 <h2>
 	Заказ № @Model успешно создан.<br>
 	В ближайшее время с вами свяжуться.<br>
 	Запишите номер заказа(@Model).
 </h2>
+<h3>
+	<a class="nav-link shoplink fa fa-fw fa-shopping-cart" asp-area="" asp-controller="ProductList" asp-action="Index">Магазин</a>
+</h3>
+<p>
+	На указанную почту должно прийти письмо.<br>
+	При использовании зарубежных почтовых сервисов письмо может идти более 5минут.<br>
+	Если его нет - проверьте папку «спам», и нажмите кнопку «не спам»
+</p>
+<p>
+	Спасибо что воспользовались нашим магазином.
+</p>

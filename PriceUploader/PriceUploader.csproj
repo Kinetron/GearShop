@@ -8,7 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DotNetZip" Version="1.16.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DataParser\DataParser.csproj" />
+    <ProjectReference Include="..\RemoteControlApi\RemoteControlApi.csproj" />
   </ItemGroup>
 
 </Project>

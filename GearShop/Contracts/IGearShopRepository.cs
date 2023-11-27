@@ -27,14 +27,20 @@ namespace GearShop.Contracts
         /// Получить список всех продуктов.
         /// </summary>
         /// <returns></returns>
-        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText);
+        List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
 
         /// <summary>
         /// Возвращает количество продуктов.
         /// </summary>
         /// <returns></returns>
-        int GetProductCount(string searchText);
+        int GetProductCount(string searchText, int productTypeId, bool available);
 
+        /// <summary>
+        /// Получает список всех продуктов на складе.
+        /// </summary>
+        /// <returns></returns>
+        List<ProductDto> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
+		
 		/// <summary>
 		/// Проверяет наличие guid в БД. Если нет – добавляет новую запись.
 		/// </summary>
@@ -48,7 +54,7 @@ namespace GearShop.Contracts
 		/// <param name="model"></param>
 		/// <param name="userGuid"></param>
 		/// <returns></returns>
-		Task<long> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string userGuid);
+		Task<long> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string userGuid, string ip);
 
 		/// <summary>
 		/// Заказы пользователя.
@@ -62,5 +68,39 @@ namespace GearShop.Contracts
         /// </summary>
         /// <returns></returns>
 		Task<List<SlaiderMainPageDto>> MainPageSlaiderDataAsync();
+
+        /// <summary>
+        /// Возвращает список продуктов.
+        /// </summary>
+        /// <returns></returns>
+        Task<List<ProductType>> GetProductTypesAsync();
+
+		/// <summary>
+		/// Возвращает название картинок и название продукта к которому относиться картинка.
+		/// </summary>
+		/// <returns></returns>
+		Task<List<KeyValuePair<string, string>>> GetProductImagesInfoAsync();
+
+        /// <summary>
+        /// Добавляет продукт в прайс.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+		Task<bool> CreateProductAsync(ProductDto model);
+
+        /// <summary>
+        /// Обновляет информацию о продукте в прайсе.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task<bool> UpdateProductAsync(ProductDto model);
+
+        /// <summary>
+        /// Удаляет продукт в прайсе.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task<bool> DeleteProductAsync(int id);
+
     }
 }

@@ -50,7 +50,7 @@ namespace GearShop.Controllers
 		/// <returns></returns>
 		public async Task<IActionResult> SynchronizeNoRegUserGuid(string guid)
 		{
-			var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+			var ip = GetRemoteIp();
 			bool result = await _gearShopRepository.SynchronizeNoRegUserGuidAsync(guid, ip);
 			if (result)
 			{
@@ -58,6 +58,15 @@ namespace GearShop.Controllers
 			}
 
 			return StatusCode(500);
+		}
+
+		private string GetRemoteIp()
+		{
+			string remoteIpAddress = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
+			if (Request.Headers.ContainsKey("X-Forwarded-For"))
+				remoteIpAddress = Request.Headers["X-Forwarded-For"];
+
+			return remoteIpAddress;
 		}
 	}
 }
