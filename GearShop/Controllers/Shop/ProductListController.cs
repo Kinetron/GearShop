@@ -1,4 +1,5 @@
-﻿using GearShop.Contracts;
+﻿using System.Security.Claims;
+using GearShop.Contracts;
 using GearShop.Models.Dto.Products;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -39,6 +40,7 @@ namespace GearShop.Controllers.Shop
 			return View();
         }
 
+        [AllowAnonymous]
         public async Task<JsonResult> GetProductList(int currentPage, string searchText, int productTypeId, bool available)
         {
 			return Json(await _gearShopRepository.GetProducts(currentPage, recordPerPage, searchText, productTypeId, available));

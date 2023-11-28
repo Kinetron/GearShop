@@ -2,6 +2,7 @@
 using GearShop.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace GearShop.Controllers
 {
@@ -18,7 +19,15 @@ namespace GearShop.Controllers
 
         public async Task<IActionResult> Index()
         {
-	        var slaiderData = await _gearShopRepository.MainPageSlaiderDataAsync();
+	        var identity = HttpContext.User.Identity as ClaimsIdentity;
+	        if (identity != null)
+	        {
+		        IEnumerable<Claim> claims = identity.Claims;
+		        // or
+		        var name = identity.FindFirst("ClaimName");
+	        }
+
+			var slaiderData = await _gearShopRepository.MainPageSlaiderDataAsync();
 	        ViewData["SlaiderData"] = slaiderData; 
             return View();
         }
