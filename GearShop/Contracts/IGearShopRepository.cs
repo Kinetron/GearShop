@@ -23,23 +23,23 @@ namespace GearShop.Contracts
         /// <returns></returns>
         string GetUserGroupCode(string userName);
 
-        /// <summary>
-        /// Получить список всех продуктов.
-        /// </summary>
-        /// <returns></returns>
-        List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
+		/// <summary>
+		/// Получить список всех продуктов.
+		/// </summary>
+		/// <returns></returns>
+		Task<List<ProductDto>> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
 
-        /// <summary>
-        /// Возвращает количество продуктов.
-        /// </summary>
-        /// <returns></returns>
-        int GetProductCount(string searchText, int productTypeId, bool available);
+		/// <summary>
+		/// Возвращает количество продуктов.
+		/// </summary>
+		/// <returns></returns>
+		Task<int> GetProductCount(string searchText, int productTypeId, bool available);
 
-        /// <summary>
-        /// Получает список всех продуктов на складе.
-        /// </summary>
-        /// <returns></returns>
-        List<ProductDto> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
+		/// <summary>
+		/// Получает список всех продуктов на складе.
+		/// </summary>
+		/// <returns></returns>
+		Task<List<ProductDto>> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
 		
 		/// <summary>
 		/// Проверяет наличие guid в БД. Если нет – добавляет новую запись.

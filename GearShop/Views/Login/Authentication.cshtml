@@ -2,8 +2,29 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model AuthData
 
+
 <div align="center">
 	<h1>Вход в магазин</h1>
+	<div class="ui-grid ui-grid-responsive">
+		<div class="ui-grid-row">
+			<div class="ui-grid-col-6">
+				<div id="googleOauthButton" style="display: none"></div>
+			</div>
+			<div class="ui-grid-col-6">
+			</div>
+		</div>
+		<div class="ui-grid-row">
+			<div class="ui-grid-col-6">
+				<form asp-controller="Login" asp-action="GoogleLogin" method="post" style="display: none">
+					<button type="submit" name="provider" value="Google">
+						Google
+					</button>
+				</form>
+			</div>
+			<div class="ui-grid-col-6">
+			</div>
+		</div>
+	</div>
 	<div>
 		<form asp-controller="Login" asp-action="Authentication" method="post">
 			<div asp-validation-summary="All"></div>
@@ -11,14 +32,14 @@
 				<tr>
 					<td>Логин</td>
 					<td>
-						<input asp-for="Username" />
+						<input asp-for="Username"/>
 						<span asp-validation-for="Username"></span>
 					</td>
 				</tr>
 				<tr>
 					<td>Пароль</td>
 					<td>
-						<input type="password"  asp-for="Password" />
+						<input type="password" asp-for="Password"/>
 						<span asp-validation-for="Password"></span>
 					</td>
 				</tr>
@@ -30,3 +51,38 @@
 		</form>
 	</div>
 </div>
+
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script type="text/javascript">
+	function handleCredentialResponse(response) {
+		console.log("Encoded JWT ID token: " + response.credential);
+	}
+	window.onload = function () {
+		google.accounts.id.initialize({
+			client_id: "989279840088-b2v4s1cgc0jf8ijurkudlt9uh5p6tm7l.apps.googleusercontent.com",
+			ux_mode: "redirect",
+			login_uri: "https://localhost:44342/",
+			callback: handleCredentialResponse,
+		});
+		google.accounts.id.renderButton(
+			document.getElementById("googleOauthButton"),
+			{ theme: "outline", size: "large" }  // customization attributes
+		);
+		google.accounts.id.prompt(); // also display the One Tap dialog
+	}
+
+	$(document).ready(function () {
+		
+	});
+
+	const AuthenticationScript = {
+		onSuccessAuth(googleUser) {
+			console.log('Logged in as: ' + googleUser.getBasicProfile().getName());
+		},
+
+		onFailureAuth(error) {
+			console.log(error);
+		}
+
+	}
+</script>
