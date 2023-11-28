@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using Serilog;
 using OrderItemDto = GearShop.Models.OrderItemDto;
 using System.Net;
+using GearShop.Enums;
 using Product = GearShop.Models.Entities.Product;
 
 namespace GearShop.Services.Repository
@@ -71,7 +72,7 @@ namespace GearShop.Services.Repository
         /// Получить список всех продуктов.
         /// </summary>
         /// <returns></returns>
-        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
+        public async Task<List<ProductDto>> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
         {
 	        var data = _dbContext.Products.Where(x=>x.Deleted == 0);
 
@@ -92,7 +93,7 @@ namespace GearShop.Services.Repository
 
 			//Переделать на нормальный sql, будет гораздо быстрее.
 
-			return data.Select(product =>
+			var list = await data.Select(product =>
 				 new ProductDto()
 					{
 						Id = product.Id,
@@ -104,14 +105,45 @@ namespace GearShop.Services.Repository
 				)
 				   .Skip((currentPage - 1) * itemsPerPage)
 				   .Take(itemsPerPage)
-				   .ToList();
+				   .ToListAsync();
+				
+				return list.Select(p =>
+				   {
+					   p.Amount = ProductThresholdConvert(p.Amount);
+					   return p;
+				   }).ToList();
+        }
+
+		/// <summary>
+		/// Удаляет реальное количество, и заменяет на пороговые значения(Нет, Мало, Достаточно).
+		/// </summary>
+		/// <param name="amount"></param>
+		/// <returns></returns>
+		private int ProductThresholdConvert(int amount)
+        {
+	        if (amount == (int)ProductThresholdEnum.EmptyThreshold)
+	        {
+		        return (int)ProductThresholdEnum.Empty;
+	        }
+	        else if(amount < (int)ProductThresholdEnum.NotEnoughThreshold)
+	        {
+		        return (int)ProductThresholdEnum.NotEnough;
+			}
+			else if (amount < (int)ProductThresholdEnum.EnoughThreshold)
+	        {
+		        return (int)ProductThresholdEnum.Enough;
+			}
+	        else
+	        {
+		        return (int)ProductThresholdEnum.Lot;
+			}
         }
 
 		/// <summary>
 		/// Возвращает количество продуктов.
 		/// </summary>
 		/// <returns></returns>
-		public int GetProductCount(string searchText, int productTypeId, bool available)
+		public async Task<int> GetProductCount(string searchText, int productTypeId, bool available)
         {
 			var data = _dbContext.Products.Where(x => x.Deleted == 0);
 
@@ -127,11 +159,11 @@ namespace GearShop.Services.Repository
 
 			if (string.IsNullOrEmpty(searchText))
 	        {
-		        return data.Count();
+		        return await data.CountAsync();
 			}
 	        else
 	        {
-				return data.Where(x=>x.Name.Contains(searchText)).Count();
+				return await data.Where(x=>x.Name.Contains(searchText)).CountAsync();
 			}
         }
 
@@ -139,7 +171,7 @@ namespace GearShop.Services.Repository
 		/// Получает список всех продуктов на складе.
 		/// </summary>
 		/// <returns></returns>
-		public List<ProductDto> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
+		public async Task<List<ProductDto>> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
 		{
 			var data = _dbContext.Products.Where(x => x.Deleted == 0);
 
@@ -160,7 +192,7 @@ namespace GearShop.Services.Repository
 
 			//Переделать на нормальный sql, будет гораздо быстрее.
 
-			return data.Select(product =>
+			return await data.Select(product =>
 					new ProductDto()
 					{
 						Id = product.Id,
@@ -173,7 +205,7 @@ namespace GearShop.Services.Repository
 				)
 				.Skip((currentPage - 1) * itemsPerPage)
 				.Take(itemsPerPage)
-				.ToList();
+				.ToListAsync();
 		}
 
 		/// <summary>

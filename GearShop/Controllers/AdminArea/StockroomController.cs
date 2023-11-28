@@ -24,9 +24,9 @@ namespace GearShop.Controllers.AdminArea
 		}
 
 		[Authorize(Roles = "Admin")]
-		public JsonResult GetProductsFromStockroom(int currentPage, string searchText, int productTypeId, bool available)
+		public async Task<JsonResult> GetProductsFromStockroom(int currentPage, string searchText, int productTypeId, bool available)
 		{
-			return Json(_gearShopRepository.GetProductsFromStockroom(currentPage, recordPerPage, searchText, productTypeId, available));
+			return Json(await _gearShopRepository.GetProductsFromStockroom(currentPage, recordPerPage, searchText, productTypeId, available));
 		}
 
 		[Authorize(Roles = "Admin")]
