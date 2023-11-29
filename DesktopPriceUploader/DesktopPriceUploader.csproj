@@ -37,9 +37,6 @@
     <ApplicationIcon>Resources\robot.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="IronXL">
-      <HintPath>dll\IronXL.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
