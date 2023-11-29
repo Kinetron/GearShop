@@ -244,8 +244,7 @@ const ShowcaseScript = {
 			success: function (response) {
 				$('#recordCountInfo').text(`Найдено ${response.totalRecords} товаров`);
 				$('#productsPaginator').puipaginator('setTotalRecords', response.totalRecords);
-
-				$('#productsPaginator').puipaginator('setState', { totalRecords: response.totalRecords, page:0 });
+				$('#productsPaginator').puipaginator('setPage',  0, false);
 			}
 		});
 	},
