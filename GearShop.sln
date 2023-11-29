@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PriceUploader", "PriceUploader\PriceUploader.csproj", "{3B8F5F23-0351-4A88-855E-B7426968B106}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlApi", "RemoteControlApi\RemoteControlApi.csproj", "{D5655276-5606-4BCB-B2C0-9DE339F57041}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlApi", "RemoteControlApi\RemoteControlApi.csproj", "{D5655276-5606-4BCB-B2C0-9DE339F57041}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopPriceUploader", "DesktopPriceUploader\DesktopPriceUploader.csproj", "{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,6 +73,14 @@ Global
 		{D5655276-5606-4BCB-B2C0-9DE339F57041}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D5655276-5606-4BCB-B2C0-9DE339F57041}.Release|x64.ActiveCfg = Release|Any CPU
 		{D5655276-5606-4BCB-B2C0-9DE339F57041}.Release|x64.Build.0 = Release|Any CPU
+		{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}.Debug|x64.Build.0 = Debug|Any CPU
+		{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}.Release|x64.ActiveCfg = Release|Any CPU
+		{974B12E3-F7F9-4344-86DA-5C2A0E0D58FA}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
