@@ -16,6 +16,7 @@ using OrderItemDto = GearShop.Models.OrderItemDto;
 using System.Net;
 using GearShop.Enums;
 using Product = GearShop.Models.Entities.Product;
+using System.Threading.Channels;
 
 namespace GearShop.Services.Repository
 {
@@ -474,6 +475,8 @@ namespace GearShop.Services.Repository
 					Rest = model.Amount,
 					ProductTypeId = model.ProductTypeId,
 					InfoSourceId = infoSourceId.Id,
+					Created = DateTime.Now,
+					Changed = DateTime.Now
 				};
 
                await _dbContext.Products.AddAsync(product);
@@ -519,7 +522,9 @@ namespace GearShop.Services.Repository
 				product.ImageName = model.ImageName;
 				product.Rest = model.Amount;
 				product.ProductTypeId = model.ProductTypeId;
-				
+				product.Changed = DateTime.Now;
+
+
 				await _dbContext.SaveChangesAsync();
 			}
 			catch (Exception ex)
@@ -543,6 +548,7 @@ namespace GearShop.Services.Repository
 				}
 
 				product.Deleted = 1;
+				product.Changed = DateTime.Now;
 				await _dbContext.SaveChangesAsync();
 			}
 			catch (Exception ex)

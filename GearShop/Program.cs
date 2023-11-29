@@ -24,7 +24,7 @@ namespace GearShop
         public static void Main(string[] args)
         {
             //ƒобавить нормальную обработку версий!
-            Console.WriteLine("Version 4");
+            Console.WriteLine("Version 5");
 			var builder = WebApplication.CreateBuilder(args);
             var config = builder.Configuration;
 

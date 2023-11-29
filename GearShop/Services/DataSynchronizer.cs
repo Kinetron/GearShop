@@ -5,6 +5,8 @@ using GearShop.Models.Entities;
 using GearShop.Services.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Newtonsoft.Json;
+using Serilog;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GearShop.Services
@@ -39,7 +41,7 @@ namespace GearShop.Services
 		/// </summary>
 		/// <param name="fileName"></param>
 		/// <returns></returns>
-		public bool CsvSynchronize(string fileName)
+		public async Task<bool> CsvSynchronize(string fileName)
 		{
 			CsvParser parser = new CsvParser();
 			List<DataParser.Models.Product> products = parser.ParseFile(fileName, '|');
@@ -51,38 +53,59 @@ namespace GearShop.Services
 
 
 			int currentRow = 1;
-
-			var info = new PriceSynchronizeStatus()
-			{
-				Current = currentRow,
-				Total = products.Count()
-			};
-
-			//Информация для прогресс бара.
-			//_dbContext.PriceSynchronizeStatus.Add(info);
-
-			//_dbContext.SaveChanges();
+			string operationName = "Синхронизация сведений о продуктах";
+			int operationId = 1;
 
 			DateTime beginDt = DateTime.Now;
 
-			//Идентификатор продукта с не известными типом.
-			int defaultTypeId = _dbContext.ProductTypes.First(x=>x.Name == "Прочие").Id;
+			//Строка в таблице которая будет содержать статус синхронизации данных.
+			PriceSynchronizeStatus synchronizeStatus = 
+				await _dbContext.PriceSynchronizeStatus.FirstOrDefaultAsync(s=>s.OperationId == operationId);
 
-			//Идентификатор источника данных
-			int? infoSourceId = _dbContext.InfoSource.FirstOrDefault(x => x.Name == PriceSourceName)?.Id;
-			if (infoSourceId == null)
+			//Таблица пуста.
+			if (synchronizeStatus == null)
 			{
-				_logger.LogError($"Not found id for InfoSource with name {PriceSourceName}");
-				return false;
+				synchronizeStatus = new PriceSynchronizeStatus();
+				_dbContext.PriceSynchronizeStatus.Add(synchronizeStatus);
 			}
+			
+			//Сброс на начальные значения.
+			synchronizeStatus.Current = currentRow;
+			synchronizeStatus.Total = products.Count();
+			synchronizeStatus.CurrentOperation = operationName;
+			synchronizeStatus.OperationId = operationId;
+			synchronizeStatus.BeginOperation = beginDt;
+			synchronizeStatus.ErrorText = string.Empty;
 
 			try
 			{
+				_dbContext.SaveChanges();
+
+
+				//Идентификатор продукта с не известными типом.
+				var defaultType = await _dbContext.ProductTypes.FirstAsync(x => x.Name == "Прочие");
+				int defaultTypeId = defaultType.Id;
+
+				//Идентификатор источника данных
+				int? infoSourceId = _dbContext.InfoSource.FirstOrDefault(x => x.Name == PriceSourceName)?.Id;
+				if (infoSourceId == null)
+				{
+					_logger.LogError($"Not found id for InfoSource with name {PriceSourceName}");
+					return false;
+				}
+
+
 				foreach (var item in products)
 				{
 					//Тип продукта.
-					int? productTypeId =
-						_dbContext.ProductTypes.FirstOrDefault(x => x.Name == item.ProductTypeName)?.Id;
+					int? productTypeId = null;
+					var currentType =
+						await _dbContext.ProductTypes.FirstOrDefaultAsync(x => x.Name == item.ProductTypeName);
+
+					if (currentType != null)
+					{
+						productTypeId = currentType.Id;
+					}
 
 					if (!productTypeId.HasValue) productTypeId = defaultTypeId;
 
@@ -96,13 +119,13 @@ namespace GearShop.Services
 						ImageName = item.ImageName,
 						Available = item.Available,
 						ProductTypeId = productTypeId.Value,
-						InfoSourceId = infoSourceId.Value 
+						InfoSourceId = infoSourceId.Value
 					};
 
 					//Существует ли продукт?
-					if (_dbContext.Products.Count(x => x.Name == item.Name) > 0)
+					if (await _dbContext.Products.CountAsync(x => x.Name == item.Name) > 0)
 					{
-						Product exists = _dbContext.Products.First(x => x.Name == item.Name);
+						Product exists = await _dbContext.Products.FirstAsync(x => x.Name == item.Name);
 						exists.Deleted = 0;
 						exists.PurchaseCost = item.PurchaseCost;
 						exists.RetailCost = item.RetailCost;
@@ -111,37 +134,45 @@ namespace GearShop.Services
 						exists.Available = item.Available;
 						exists.ProductTypeId = productTypeId.Value;
 						exists.Changed = DateTime.Now;
-						
+
 						//Картинки нет. Добавим.
 						if (string.IsNullOrEmpty(exists.ImageName))
 						{
-							exists.ImageName =  item.ImageName;
+							exists.ImageName = item.ImageName;
 						}
 					}
 					else
 					{
 						product.Created = DateTime.Now;
 						product.Changed = product.Created;
-						_dbContext.Products.Add(product);
+						await _dbContext.Products.AddAsync(product);
 					}
 
-					//currentRow++;
-					//if (currentRow % StepProgress == 0)
-					//{
-					//	var progress = _dbContext.PriceSynchronizeStatus.First();
-					//	progress.Current = currentRow;
-					//}
+					currentRow++;
+					if (currentRow % StepProgress == 0)
+					{
+						synchronizeStatus.Current = currentRow;
+					}
 
-					_dbContext.SaveChanges();
+					await _dbContext.SaveChangesAsync();
 				}
 
 				//Все продукты которых нет в прайс листе будут иметь дату раньше.
 				// Удалим продукты которых нет в прайсе.
-				DeleteEarlyProducts(beginDt, infoSourceId.Value); //Обновить все продукты 
+				await DeleteEarlyProducts(beginDt, infoSourceId.Value); //Обновить все продукты 
+
+				//Операция завершена.
+				synchronizeStatus.Current = synchronizeStatus.Total;
+				synchronizeStatus.EndOperation = DateTime.Now;
+				await _dbContext.SaveChangesAsync();
 			}
 			catch (Exception ex)
 			{
+				synchronizeStatus.ErrorText = ex.Message;
+				await _dbContext.SaveChangesAsync();
+
 				_logger.LogError($"Ошибка обновления строк", ex);
+				return false;
 			}
 
 			return true;
@@ -152,16 +183,19 @@ namespace GearShop.Services
 		/// </summary>
 		/// <param name="beginDt"></param>
 		/// <param name="infoSourceId"></param>
-		private void DeleteEarlyProducts(DateTime beginDt, int infoSourceId)
+		private async Task<bool> DeleteEarlyProducts(DateTime beginDt, int infoSourceId)
 		{
-			var products = _dbContext.Products.Where(p => p.Changed < beginDt && p.InfoSourceId == infoSourceId).ToList();
+			var products = await _dbContext.Products.Where(p => p.Changed < beginDt
+			                                                    && p.InfoSourceId == infoSourceId).ToListAsync();
 			products.ForEach(p=>
 			{
 				p.Deleted = 1;
 				p.Changed = DateTime.Now;
 			});
 
-			_dbContext.SaveChanges();
+			await _dbContext.SaveChangesAsync();
+
+			return true;
 		}
 
 		/// <summary>
@@ -193,6 +227,28 @@ namespace GearShop.Services
 			}
 
 			return true;
+		}
+
+		/// <summary>
+		/// Возвращает информацию о текущей выполняемой операции(например синхронизация данных).
+		/// </summary>
+		/// <param name="operationId"></param>
+		/// <returns></returns>
+		public async Task<string> GetOperationStatus(int operationId)
+		{
+			try
+			{
+				var info =
+					await _dbContext.PriceSynchronizeStatus.FirstOrDefaultAsync(o => o.OperationId == operationId);
+
+				if (info == null) return null;
+				return JsonConvert.SerializeObject(info, Formatting.Indented);
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return null;
+			}
 		}
 
 		/// <summary>

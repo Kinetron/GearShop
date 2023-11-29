@@ -61,7 +61,7 @@ namespace GearShop.Services.Repository
 		/// <summary>
 		/// Хранит информацию о процессе синхронизации данных. Для прогресс бара.
 		/// </summary>
-		//public DbSet<PriceSynchronizeStatus> PriceSynchronizeStatus { get; set; }
+		public DbSet<PriceSynchronizeStatus> PriceSynchronizeStatus { get; set; }
 		
 		public string GetUserGroupRole(string userName)
         {
