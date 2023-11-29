@@ -1,8 +1,5 @@
-﻿namespace GearShop.Models.Entities
+﻿namespace RemoteControlApi.Models
 {
-	/// <summary>
-	/// Хранит информацию о процессе синхронизации данных. Для прогресс бара.
-	/// </summary>
 	public class PriceSynchronizeStatus
 	{
 		public int Id { get; set; }
@@ -11,8 +8,6 @@
 		public int Current { get; set; }
 		public int Total { get; set; }
 
-		public string? ErrorText { get; set; }
-		
 		public string CurrentOperation { get; set; }
 
 		public DateTime? BeginOperation { get; set; }
