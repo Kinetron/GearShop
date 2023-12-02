@@ -1,4 +1,6 @@
-﻿using GearShop.Models;
+﻿using System.IdentityModel.Tokens.Jwt;
+using GearShop.Models;
+using GearShop.Models.Dto.Authentication;
 
 namespace GearShop.Contracts;
 

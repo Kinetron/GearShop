@@ -1,4 +1,14 @@
 ﻿@addTagHelper *, Wangkanai.Detection
+<style>
+	.hide-block {
+		display: none;
+	}
+
+	.user-name-block {
+		padding-right: 10px;
+	}
+</style>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +18,7 @@
 
 	<meta name="google-signin-client_id" content="989279840088-b2v4s1cgc0jf8ijurkudlt9uh5p6tm7l.apps.googleusercontent.com">
     <title>@ViewData["Title"] - Магазин запчастей</title>
-
+    <script src="https://vk.com/js/api/openapi.js?169" type="text/javascript"></script>
 	<link rel="stylesheet" type="text/css" href="~/font-awesome-4.7.0/css/font-awesome.css">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -35,11 +45,20 @@
 					<li class="nav-item">
 						<a class="nav-link text-dark" asp-controller="Basket" asp-action="Index">Корзина</a>
 					</li>
-					<li class="nav-item">
+					<li class="hide-block nav-item" id="adminLink">
+						<a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Администрирование</a>
+					</li>
+						<li class="hide-block nav-item" id="logInLink">
 						<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Authentication">Войти</a>
+					</li>
+					<li class="hide-block nav-item" id="logOutLink">
+						<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Logout">Выйти</a>
 					</li>
 				</ul>
 			</div>
+				<div id="userName" class="user-name-block"></div>
+				<img id="userIcon" src="/images/guest.png" width="30" height="30"
+				alt="User icon" />
 		</div>
 	</nav>
 </header>
@@ -67,8 +86,45 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
+	MainMenuScript.Init();
 	CommonScript.Init();
 });
+
+const MainMenuScript = {
+	  Init() {
+
+		  $.ajax({
+			  url: '@Url.Action("GetAccountInfo", "Login")',
+			  type: "GET",
+				success: function (response) {
+
+					if (response.isAuth == false) {
+
+						$('#userName').text('Гость');
+						$('#adminLink').hide();
+						$('#logInLink').show();
+						$('#logOutLink').hide();
+					} else {
+
+						$('#userName').text(response.name);
+						$('#logInLink').hide();
+						$('#logOutLink').show();
+
+						if (response.isAdmin == true) {
+							$('#adminLink').show();
+						}
+
+						if (response.pictureUrl !== undefined && response.pictureUrl.length !== 0) {
+							$('#userIcon').attr('src', response.pictureUrl);
+						}
+					}
+					
+				},
+			  error: function() {
+			  }
+		  });
+	  } 
+}
 
 @*Общий набор функций для всех страниц.*@
 const CommonScript = {

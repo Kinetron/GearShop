@@ -1,28 +1,41 @@
-﻿using System.Security.Claims;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using GearShop.Contracts;
 using GearShop.Models.Dto.Authentication;
+using Google.Apis.Auth;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Common;
 
 namespace GearShop.Controllers
 {
     public class LoginController : Controller
     {
-        private readonly IIdentityService _identity;
-        private readonly IGearShopRepository _gearShopRepository;
+	    private readonly IConfiguration _configuration;
+	    private readonly IIdentityService _identity;
+        private readonly IJwtAuth _jwtAuth;
+        private readonly IGoogleAuth _googleAuth;
+        private readonly IVkAuth _vkAuth;
 
-        public LoginController(IIdentityService identity, IGearShopRepository gearShopRepository)
+        public LoginController(IConfiguration configuration, IIdentityService identity, IJwtAuth jwtAuth, IGoogleAuth googleAuth,
+	        IVkAuth vkAuth)
         {
-            _identity = identity;
-            _gearShopRepository = gearShopRepository;
+	        _configuration = configuration;
+	        _identity = identity;
+			_jwtAuth = jwtAuth;
+            _googleAuth = googleAuth;
+            _vkAuth = vkAuth;
         }
 
         public IActionResult Authentication()
         {
-            return View();
+	        ViewData["googleAuthClientId"] = _configuration["GoogleAuth:ClientId"];
+	        ViewData["vkAppId"] = _configuration["VkAuth:AppId"];
+			return View();
         }
 
         /// <summary>
@@ -44,19 +57,6 @@ namespace GearShop.Controllers
             return RedirectToAction("index", "Admin");
         }
 
-        [AllowAnonymous]
-        public IActionResult GoogleLogin()
-        {
-	        string returnUrl = "/ProductList";
-
-			return new ChallengeResult(
-				GoogleDefaults.AuthenticationScheme,
-				new AuthenticationProperties
-				{
-					RedirectUri = Url.Action(nameof(LoginCallback), new { returnUrl })
-				});
-        }
-
         public async Task<IActionResult> LoginCallback(string returnUrl)
         {
 	        var authenticateResult = await HttpContext.AuthenticateAsync("External");
@@ -76,40 +76,81 @@ namespace GearShop.Controllers
 
 	        return LocalRedirect("/");
         }
-
+		
+        public IActionResult Logout()
+        {
+	        HttpContext.Session.Clear();
+	        return RedirectToAction("Index", "ProductList");
+		}
 
 		[AllowAnonymous]
-        public async Task<IActionResult> GoogleResponse()
+		[HttpPost]
+        public async Task<IActionResult> GoogleLogin(string token)
         {
-			//ExternalLoginInfo info = await signInManager.GetExternalLoginInfoAsync();
-			//if (info == null)
-			// return RedirectToAction(nameof(Login));
+	        string jwt = await _googleAuth.Authorization(token);
+			if (token == null)
+			{
+				return BadRequest();
+			}
 
-			//var result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, false);
-			//string[] userInfo = { info.Principal.FindFirst(ClaimTypes.Name).Value, info.Principal.FindFirst(ClaimTypes.Email).Value };
-			//if (result.Succeeded)
-			// return View(userInfo);
-			//else
-			//{
-			// AppUser user = new AppUser
-			// {
-			//  Email = info.Principal.FindFirst(ClaimTypes.Email).Value,
-			//  UserName = info.Principal.FindFirst(ClaimTypes.Email).Value
-			// };
+			HttpContext.Session.SetString("JWToken", token);
+	        return Ok();
+		}
+		
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<IActionResult> VkLogin(string token)
+        {
+	        string jwt = await _vkAuth.Authorization(token);
+	        if (token == null)
+	        {
+		        return BadRequest();
+	        }
 
-			// IdentityResult identResult = await userManager.CreateAsync(user);
-			// if (identResult.Succeeded)
-			// {
-			//  identResult = await userManager.AddLoginAsync(user, info);
-			//  if (identResult.Succeeded)
-			//  {
-			//   await signInManager.SignInAsync(user, false);
-			//   return View(userInfo);
-			//  }
-			// }
-			// return AccessDenied();
-			//}
+	        HttpContext.Session.SetString("JWToken", token);
 			return Ok();
-        }
+		}
+
+        /// <summary>
+		/// Возвращает информацию о пользователе.
+		/// </summary>
+		/// <returns></returns>
+		[AllowAnonymous]
+        public IActionResult GetAccountInfo()
+		{
+			AccountInfoDto info = new AccountInfoDto()
+			{
+				Name = "Гость",
+				Email = "",
+				PictureUrl = ""
+			};
+
+			var jwt = HttpContext.Session.GetString("JWToken");
+
+			if (jwt == null)
+			{
+				return Ok(info);
+			}
+
+			//Авторизация ВК.
+			if (jwt.Contains("uid") && jwt.Contains("first_name"))
+			{
+				info = _vkAuth.GetUserInfo(jwt);
+				return Ok(info);
+			}
+
+			info.IsAuth = true;
+			JwtSecurityToken token = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
+
+			if (token.Audiences.Any()) //Пришел через гугл.
+			{
+				info = _googleAuth.GetUserInfoFromJwt(token);
+				return Ok(info);
+			}
+
+			info = _jwtAuth.GetUserInfoFromJwt(token);
+
+			return Ok(info);
+		}
     }
 }

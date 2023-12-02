@@ -1,27 +1,22 @@
 ﻿@using GearShop.Models.Dto.Authentication
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model AuthData
-
+@{
+	string googleAuthClientId = (string)ViewData["googleAuthClientId"];
+	string vkAppId = (string)ViewData["vkAppId"];
+}
 
 <div align="center">
 	<h1>Вход в магазин</h1>
 	<div class="ui-grid ui-grid-responsive">
 		<div class="ui-grid-row">
 			<div class="ui-grid-col-6">
-				<div id="googleOauthButton" style="display: none"></div>
-			</div>
-			<div class="ui-grid-col-6">
+				<div id="vk_auth"></div>
 			</div>
 		</div>
 		<div class="ui-grid-row">
 			<div class="ui-grid-col-6">
-				<form asp-controller="Login" asp-action="GoogleLogin" method="post" style="display: none">
-					<button type="submit" name="provider" value="Google">
-						Google
-					</button>
-				</form>
-			</div>
-			<div class="ui-grid-col-6">
+				<div id="googleOauthButton"></div>
 			</div>
 		</div>
 	</div>
@@ -55,34 +50,69 @@
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script type="text/javascript">
 	function handleCredentialResponse(response) {
-		console.log("Encoded JWT ID token: " + response.credential);
+
+		$.ajax({
+			url: '@Url.Action("GoogleLogin", "Login")',
+			type: "POST",
+			data: { 
+				token: response.credential
+			},
+			success: function() {
+				window.location.href = '@Url.Action("Index","ProductList")';
+			},
+			error: function() {
+				CommonScript.showMessage('error', 'Ошибка', 'Ошибка входа.');
+			}
+		});   
 	}
+
 	window.onload = function () {
 		google.accounts.id.initialize({
-			client_id: "989279840088-b2v4s1cgc0jf8ijurkudlt9uh5p6tm7l.apps.googleusercontent.com",
-			ux_mode: "redirect",
-			login_uri: "https://localhost:44342/",
-			callback: handleCredentialResponse,
+			client_id: '@googleAuthClientId',
+			//ux_mode: "redirect",
+			login_uri: "http://localhost/",
+			callback: (data) => {
+				handleCredentialResponse(data);
+			},
 		});
 		google.accounts.id.renderButton(
 			document.getElementById("googleOauthButton"),
-			{ theme: "outline", size: "large" }  // customization attributes
+			{ theme: "outline", size: 'standart'}  @* customization attributes *@
 		);
-		google.accounts.id.prompt(); // also display the One Tap dialog
-	}
+		google.accounts.id.prompt(); @* also display the One Tap dialog *@
+		}
+
+
+	VK.init({
+		apiId: @vkAppId
+	});
+
+	VK.Widgets.Auth('vk_auth',
+		{
+			onAuth: (data) => {
+				$.ajax({
+					url: '@Url.Action("VkLogin", "Login")',
+					type: "POST",
+					data: {
+						token: JSON.stringify(data)
+			},
+					success: function() {
+						window.location.href = '@Url.Action("Index","ProductList")';
+					},
+					error: function() {
+						CommonScript.showMessage('error', 'Ошибка', 'Ошибка входа.');
+					}
+				}); 
+			}
+		}
+	);
 
 	$(document).ready(function () {
 		
 	});
 
 	const AuthenticationScript = {
-		onSuccessAuth(googleUser) {
-			console.log('Logged in as: ' + googleUser.getBasicProfile().getName());
-		},
 
-		onFailureAuth(error) {
-			console.log(error);
-		}
 
 	}
 </script>
