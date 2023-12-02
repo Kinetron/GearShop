@@ -196,8 +196,13 @@ const ShowcaseScript = {
 		});
 
 		$("#searchInput").on('keyup', function (e) {
+
 			if (e.key === 'Enter' || e.keyCode === 13) {
 				ShowcaseScript.searchByText($('#searchInput').val());
+			}
+
+			if ((e.key === 'Backspace' || e.keyCode === 8) && $('#searchInput').val().length === 0) {
+				ShowcaseScript.searchByText('');
 			}
 		});
 
@@ -265,7 +270,9 @@ const ShowcaseScript = {
 	productTypeChanged(typeId) {
 		$(`#productType${this.productTypeId}`).removeClass("select-type-product");
 		ShowcaseScript.productTypeId = typeId;
-		
+		$('#searchInput').val('');
+		ShowcaseScript.searchText = '';
+
 		$(`#productType${typeId}`).addClass("select-type-product");
 		this.updateProductList();
 	},

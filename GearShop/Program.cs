@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using Azure.Core;
 using GearShop.Contracts;
+using GearShop.Models.Dto.Authentication;
 using GearShop.Services;
 using GearShop.Services.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,6 +17,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using static Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace GearShop
 {
@@ -23,12 +25,22 @@ namespace GearShop
     {
         public static void Main(string[] args)
         {
-            //ƒобавить нормальную обработку версий!
-            Console.WriteLine("Version 5");
+			//ƒобавить нормальную обработку версий!
+			Console.WriteLine("Version 6");
 			var builder = WebApplication.CreateBuilder(args);
             var config = builder.Configuration;
 
-            builder.Services.AddAuthentication(x =>
+			builder.Services.AddDbContext<GearShopDbContext>(options =>
+              options.UseSqlServer(config["MsSqlConnectionStrings:Default"]), ServiceLifetime.Transient);
+
+            builder.Services.AddTransient<IGearShopRepository, GearShopRepository>();
+
+            builder.Services.AddSingleton<IJwtAuth, JwtAuth>();
+            builder.Services.AddScoped<IIdentityService, IdentityService>();
+
+            builder.Services.AddScoped<IVkAuth, VkAuth>();
+			
+			builder.Services.AddAuthentication(x =>
             {
                 x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -45,57 +57,6 @@ namespace GearShop
                 };
             });
 
-   //         builder.Services
-			//	.AddAuthentication(o =>
-			//	{
-			//		o.DefaultScheme = "Application";
-			//		o.DefaultSignInScheme = "External";
-			//	})
-			//	.AddCookie("Application")
-			//	.AddCookie("External")
-			//	.AddGoogle(googleOptions =>
-			//	{
-	  //          googleOptions.ClientId = config["GoogleOAuth:ClientId"];
-
-			//	googleOptions.ClientSecret = config["GoogleOAuth:ClientSecret"];
-	  //          googleOptions.SaveTokens = true;
-			//	// googleOptions.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-			//	googleOptions.CallbackPath = new PathString("/ProductList");
-			//	googleOptions.UserInformationEndpoint = "https://www.googleapis.com/oauth2/v2/userinfo";
-	  //          googleOptions.ClaimActions.Clear();
-	  //          googleOptions.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
-	  //          googleOptions.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
-	  //          googleOptions.ClaimActions.MapJsonKey(ClaimTypes.GivenName, "given_name");
-	  //          googleOptions.ClaimActions.MapJsonKey(ClaimTypes.Surname, "family_name");
-	  //          googleOptions.ClaimActions.MapJsonKey("urn:google:profile", "link");
-	  //          googleOptions.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
-	  //          googleOptions.ClaimActions.MapJsonKey("picture", "picture");
-			//});
-
-   //         builder.Services.AddAuthentication().AddOAuth("VK", "", options =>
-   //         {
-	  //          options.ClientId = config["VkOAuth:AppId"];
-	  //          options.ClientSecret = config["VkOAuth:AppSecret"];
-	  //          options.ClaimsIssuer = "VKontakte";
-	  //          options.CallbackPath = new PathString("/signin-vkontakte-token");
-	  //          options.AuthorizationEndpoint = "https://oauth.vk.com/authorize";
-	  //          options.TokenEndpoint = "https://oauth.vk.com/access_token";
-	  //          options.Scope.Add("email");
-	  //          options.SaveTokens = true;
-	  //          options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "user_id");
-	  //          options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
-
-	  //          options.Events = new OAuthEvents
-   //             {
-   //                 OnCreatingTicket = context =>
-   //                 {
-   //                     context.RunClaimActions(context.TokenResponse.Response.RootElement);
-   //                     return Task.CompletedTask;
-   //                 },
-   //                 OnRemoteFailure = OnFailure
-			//	};
-   //         });
-
 			builder.Services.AddDetection(); //ќпределение типа устройства.
 
 			builder.Services.AddSingleton<IEMailNotifier, EMailNotifier>(x=> 
@@ -110,10 +71,10 @@ namespace GearShop
 		            provider.GetService<IEMailNotifier>(), provider.GetService<ILogger<Notifier>>()));
 
             builder.Services.AddSingleton<IFileStorage>(x=>new FileStorage("Upload\\Files"));
-            builder.Services.AddScoped<IIdentityService>(x => 
-                new IdentityService(config["JwtSettings:Key"]!, x.GetRequiredService<IGearShopRepository>()));
-            
-            builder.Services.AddDistributedMemoryCache();
+			builder.Services.AddSingleton<IGoogleAuth, GoogleAuth> ();
+			
+
+			builder.Services.AddDistributedMemoryCache();
 			builder.Services.AddHttpContextAccessor();
 
 			builder.Services.AddSession(options =>
@@ -122,14 +83,10 @@ namespace GearShop
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
-            
-            builder.Services.AddDbContext<GearShopDbContext>(options =>
-                options.UseSqlServer(config["MsSqlConnectionStrings:Default"]));
 
-            builder.Services.AddScoped<IDataSynchronizer, DataSynchronizer>();
+			builder.Services.AddScoped<IDataSynchronizer, DataSynchronizer>();
 
 			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-            builder.Services.AddScoped<IGearShopRepository, GearShopRepository>();
 
             // Add services to the container.
            builder.Services.AddControllersWithViews()

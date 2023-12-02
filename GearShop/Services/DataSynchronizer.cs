@@ -1,6 +1,7 @@
 ﻿using DataParser;
 using GearShop.Contracts;
 using GearShop.Controllers;
+using GearShop.Enums;
 using GearShop.Models.Entities;
 using GearShop.Services.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -80,8 +81,7 @@ namespace GearShop.Services
 			try
 			{
 				_dbContext.SaveChanges();
-
-
+				
 				//Идентификатор продукта с не известными типом.
 				var defaultType = await _dbContext.ProductTypes.FirstAsync(x => x.Name == "Прочие");
 				int defaultTypeId = defaultType.Id;
@@ -94,6 +94,17 @@ namespace GearShop.Services
 					return false;
 				}
 
+				//Правила синхронизации.
+				var defaultSynchronizationRule = await _dbContext.SynchronizationRules
+					.FirstOrDefaultAsync(x => x.Code == (int)SynchronizationRulesEnum.None);
+
+				if (defaultSynchronizationRule == null)
+				{
+					_logger.LogError("Not found default id for SynchronizationRules");
+					return false;
+				}
+
+				int defaultSynchronizationRuleId = defaultSynchronizationRule.Id;
 
 				foreach (var item in products)
 				{
@@ -109,19 +120,6 @@ namespace GearShop.Services
 
 					if (!productTypeId.HasValue) productTypeId = defaultTypeId;
 
-					Product product = new Product()
-					{
-						Name = item.Name,
-						RetailCost = item.RetailCost,
-						PurchaseCost = item.PurchaseCost,
-						WholesaleCost = item.WholesaleCost,
-						Rest = item.Rest,
-						ImageName = item.ImageName,
-						Available = item.Available,
-						ProductTypeId = productTypeId.Value,
-						InfoSourceId = infoSourceId.Value
-					};
-
 					//Существует ли продукт?
 					if (await _dbContext.Products.CountAsync(x => x.Name == item.Name) > 0)
 					{
@@ -132,7 +130,6 @@ namespace GearShop.Services
 						exists.WholesaleCost = item.WholesaleCost;
 						exists.Rest = item.Rest;
 						exists.Available = item.Available;
-						exists.ProductTypeId = productTypeId.Value;
 						exists.Changed = DateTime.Now;
 
 						//Картинки нет. Добавим.
@@ -140,9 +137,35 @@ namespace GearShop.Services
 						{
 							exists.ImageName = item.ImageName;
 						}
+
+						//Тип синхронизации продукта. Переделать на include
+						var synchronizationRule = await 
+							_dbContext.SynchronizationRules.FirstAsync(x=>x.Id == exists.SynchronizationRuleId);
+
+						//Игнорирование типа и картинки с прайса.
+						if (synchronizationRule.Code != (int)SynchronizationRulesEnum.IgnoredTypeAndImageFromPrice)
+						{
+							exists.ProductTypeId = productTypeId.Value;
+							exists.ImageName = item.ImageName;
+						}
+
 					}
 					else
 					{
+						Product product = new Product()
+						{
+							Name = item.Name,
+							RetailCost = item.RetailCost,
+							PurchaseCost = item.PurchaseCost,
+							WholesaleCost = item.WholesaleCost,
+							Rest = item.Rest,
+							ImageName = item.ImageName,
+							Available = item.Available,
+							ProductTypeId = productTypeId.Value,
+							InfoSourceId = infoSourceId.Value,
+							SynchronizationRuleId = defaultSynchronizationRuleId
+						};
+						
 						product.Created = DateTime.Now;
 						product.Changed = product.Created;
 						await _dbContext.Products.AddAsync(product);

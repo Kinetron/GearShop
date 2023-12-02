@@ -1,9 +1,12 @@
-﻿using System.Security.Claims;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using GearShop.Contracts;
 using GearShop.Models.Dto.Products;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Common;
 using Serilog;
 using Wangkanai.Detection.Models;
 using Wangkanai.Detection.Services;

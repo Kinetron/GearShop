@@ -59,6 +59,11 @@ namespace GearShop.Services.Repository
 		public DbSet<InfoSource> InfoSource { get; set; }
 
 		/// <summary>
+		/// Правила синхронизации для продуктов из прайс листа.
+		/// </summary>
+		public DbSet<SynchronizationRules> SynchronizationRules { get; set; }
+		
+		/// <summary>
 		/// Хранит информацию о процессе синхронизации данных. Для прогресс бара.
 		/// </summary>
 		public DbSet<PriceSynchronizeStatus> PriceSynchronizeStatus { get; set; }

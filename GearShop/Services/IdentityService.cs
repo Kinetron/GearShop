@@ -6,6 +6,7 @@ using GearShop.Models;
 using GearShop.Contracts;
 using Azure.Core;
 using GearShop.Services.Repository;
+using GearShop.Models.Dto.Authentication;
 
 namespace GearShop.Services
 {
@@ -14,43 +15,17 @@ namespace GearShop.Services
     /// </summary>
     public class IdentityService : IIdentityService
     {
-        private readonly string _jwtKey;
         private readonly IGearShopRepository _repository;
+        private readonly IJwtAuth _jwtAuth;
+
         public string LastError { get; private set; }
 
-        public IdentityService(string jwtKey, IGearShopRepository repository)
+        public IdentityService(IGearShopRepository repository, IJwtAuth jwtAuth)
         {
-            _jwtKey = jwtKey;
-            _repository = repository;
+	        _repository = repository;
+	        _jwtAuth = jwtAuth;
         }
-
-        /// <summary>
-        /// Создает токен авторизации.
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        private string CreateToken(string userName, string role)
-        {
-            List<Claim> claims = new List<Claim>()
-            {
-                new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.Role, role)
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
-            //Учетные данные.
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
-            //Создаем токен.
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddHours(1),
-                signingCredentials: creds //Учетные данные для подписи
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-        
+		
         /// <summary>
         /// Проверят пользователя на возможность входа в систему. Возвращает токен для авторизации.
         /// </summary>
@@ -64,7 +39,7 @@ namespace GearShop.Services
             //Получение роли.
             string role = _repository.GetUserGroupCode(userName);
 
-            return CreateToken(userName, role);
+            return _jwtAuth.CreateToken(userName, role, "", "", "");
         }
 
 		/// <summary>
@@ -91,15 +66,15 @@ namespace GearShop.Services
 
 			return true;
         }
-
-        //public void Register(UserDto request)
-        //{
-        //    //Создает хэшированный пароль с солью.
-        //    string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-        //    user.Username = request.Username;
-        //    user.PasswordHash = passwordHash;
         
-        //}
-    }
+		//public void Register(UserDto request)
+		//{
+		//    //Создает хэшированный пароль с солью.
+		//    string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+		//    user.Username = request.Username;
+		//    user.PasswordHash = passwordHash;
+
+		//}
+	}
 }
