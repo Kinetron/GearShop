@@ -25,8 +25,10 @@ public class Product
     public string? Available { get; set; }
 
     public int InfoSourceId { get; set; }
-    
-	public int Deleted { get; set; }
+
+    public int SynchronizationRuleId { get; set; }
+
+    public int Deleted { get; set; }
 
     public DateTime? Created { get; set; }
 
