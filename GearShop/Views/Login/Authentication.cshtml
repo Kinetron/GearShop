@@ -6,6 +6,12 @@
 	string vkAppId = (string)ViewData["vkAppId"];
 }
 
+<style>
+	.row-padding-block {
+		padding-top: 10px;
+	}
+</style>
+
 <div align="center">
 	<h1>Вход в магазин</h1>
 	<div class="ui-grid ui-grid-responsive">
@@ -14,7 +20,7 @@
 				<div id="vk_auth"></div>
 			</div>
 		</div>
-		<div class="ui-grid-row">
+		<div class="ui-grid-row row-padding-block">
 			<div class="ui-grid-col-6">
 				<div id="googleOauthButton"></div>
 			</div>
@@ -70,7 +76,7 @@
 		google.accounts.id.initialize({
 			client_id: '@googleAuthClientId',
 			//ux_mode: "redirect",
-			login_uri: "http://localhost/",
+			//login_uri: "",
 			callback: (data) => {
 				handleCredentialResponse(data);
 			},
