@@ -35,6 +35,7 @@ namespace GearShop.Controllers
         {
 	        ViewData["googleAuthClientId"] = _configuration["GoogleAuth:ClientId"];
 	        ViewData["vkAppId"] = _configuration["VkAuth:AppId"];
+
 			return View();
         }
 
