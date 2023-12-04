@@ -102,5 +102,19 @@ namespace GearShop.Contracts
         /// <returns></returns>
         Task<bool> DeleteProductAsync(int id);
 
-    }
+		/// <summary>
+		/// Возвращает html раздела или страницы «Статьи»
+		/// </summary>
+		/// <returns></returns>
+		Task<string> GetChapterContent(int? parentId);
+
+		/// <summary>
+		/// Возвращает список глав раздела «Статьи»
+		/// </summary>
+		/// <returns></returns>
+		Task<List<string>> GetChapterList();
+
+		Task<bool> AddChapter(int parentId);
+		Task<bool> SaveChapter(string text, int? chapterId);
+	}
 }
