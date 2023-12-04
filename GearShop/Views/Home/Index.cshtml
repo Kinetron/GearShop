@@ -6,8 +6,17 @@
 <style>
 	.contact-image {
 		height: 200px;
+		width: 760px;
+	}
+
+	.main-panel {
 		width: 800px;
 	}
+
+	.contact-label {
+		font-weight: bold;
+	}
+
 </style>
 
 <div class="text-start">
@@ -21,19 +30,31 @@
 				}
 			</ul>
 		</div>
-		<div>
-			<h3 class="display-4">Магазин авто запчастей</h3>
-			<p>
-				Добро пожаловать в наш магазин.
-				Тут вы можете найти разные товары.
-			</p>
-			<p>
-			<h3><a class="nav-link text-dark" asp-area="" asp-controller="ProductList" asp-action="Index">К покупкам</a></h3>
-			<p>
-			<p>
-			<img src="images/contacts.png" class="contact-image" />
-			</p>
-		</div>
+	<div id="mainPаnel" class="main-panel">
+		<p>
+			<button id="toBuyBtn" type="button">К покупкам</button>
+		</p>
+
+		Предлагаем Вам широкий выбор:<br>
+		- подшипников <br>
+		- ремней <br>
+		- сальников <br>
+		- манжеты гидравлические и пневматические<br>
+		- уплотнительных колец <br>
+		- стопорных колец <br>
+		- электродов<br>
+		- автозапчасти под заказ<br>
+		- метизы под заказ<br>
+
+
+		Сфера применения поставляемых подшипников довольно обширна: приборостроение, машиностроение,
+		горнодобывающая промышленность, сельско-хозяйственный и автомобильный транспорт.<br>
+		Найдем для вас подшипник подходящей марки и размера!
+		
+		<p>
+			<a class="nav-link text-dark contact-label" asp-controller="Contacts" asp-action="Index">Контакты</a>
+		</p>
+	</div>
 </div>
 
 <script type="text/javascript">
@@ -41,5 +62,13 @@
 	$('#galleryControl').puigalleria({
 		panelWidth: 800,
 		panelHeight: 200
+	});
+
+	$('#mainPаnel').puipanel();
+	
+	$('#toBuyBtn').puibutton({
+		click: function(event) {
+			window.location.href = '@Url.Action("Index", "ProductList")';
+		}
 	});
 </script>

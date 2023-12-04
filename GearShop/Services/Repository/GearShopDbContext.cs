@@ -68,6 +68,11 @@ namespace GearShop.Services.Repository
 		/// </summary>
 		public DbSet<PriceSynchronizeStatus> PriceSynchronizeStatus { get; set; }
 		
+		/// <summary>
+		/// Статьи.
+		/// </summary>
+		public DbSet<Chapter> Chapters { get; set; }
+
 		public string GetUserGroupRole(string userName)
         {
            return this.Database.SqlQueryRaw<string>("SELECT [dbo].GetUserGroupRole(@userName) as value",
@@ -114,7 +119,14 @@ namespace GearShop.Services.Repository
 				});
 			});
 
-			//modelBuilder.Entity<PriceSynchronizeStatus>(builder => { builder.HasNoKey(); });
+			modelBuilder.Entity<Chapter>(entity =>
+			{
+				entity.ToTable(tb =>
+				{
+					tb.HasTrigger("tr_Chapters_LogIns");
+					tb.HasTrigger("tr_Chapters_LogUpd");
+				});
+			});
 		}
     }
 }
