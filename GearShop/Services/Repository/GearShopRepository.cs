@@ -17,6 +17,9 @@ using System.Net;
 using GearShop.Enums;
 using Product = GearShop.Models.Entities.Product;
 using System.Threading.Channels;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using static System.Net.Mime.MediaTypeNames;
+using Page = GearShop.Models.Entities.Page;
 
 namespace GearShop.Services.Repository
 {
@@ -618,6 +621,97 @@ namespace GearShop.Services.Repository
 				
 				page.Content = text;
 				await _dbContext.SaveChangesAsync();
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+		}
+
+		public async Task<List<InfoPageDto>> GetArticleList(string parentPageName)
+		{
+			Page parent = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == parentPageName);
+			if (parent == null) return new List<InfoPageDto>();
+
+			var list = await _dbContext.Pages.Where(x=>x.ParentId == parent.Id).ToListAsync();
+
+			return list.Select(x => new InfoPageDto()
+			{
+				Id = x.Id,
+				Name = x.Name,
+				Title = x.Title,
+				Content = x.Content,
+				TitleImage = x.TitleImage
+			}).ToList();
+		}
+
+		/// <summary>
+		/// Возвращает статью
+		/// </summary>
+		/// <returns></returns>
+		public async Task<InfoPageDto> GetArticle(int id)
+		{
+			Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id);
+
+			if (page == null) return null;
+
+			return new InfoPageDto()
+			{
+				Id = page.Id,
+				Name = page.Name,
+				Title = page.Title,
+				Content = page.Content,
+				TitleImage = page.TitleImage
+			};
+		}
+
+		/// <summary>
+		/// Добавляет статью.
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="pageName"></param>
+		/// <returns></returns>
+		public async Task<bool> AddArticle(string title, string content, string parentPageName)
+		{
+			try
+			{
+				Page parent = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == parentPageName);
+				if (parent == null) return false;
+
+				Page article = new Page()
+				{
+					Name = Guid.NewGuid().ToString(),
+					ParentId = parent.Id,
+					Title = title,
+					Content = content
+				};
+
+				await _dbContext.Pages.AddAsync(article);
+				await _dbContext.SaveChangesAsync();
+
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+		}
+
+		public async Task<bool> UpdateArticle(string title, string content, int id)
+		{
+			try
+			{
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id);
+				if (page == null) return false;
+				
+				page.Title = title;
+				page.Content = content;
+				
+				await _dbContext.SaveChangesAsync();
+
 				return true;
 			}
 			catch (Exception ex)

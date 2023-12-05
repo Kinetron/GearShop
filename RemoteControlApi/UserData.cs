@@ -3,7 +3,7 @@
 	//Учетка загрузчика.
 	public static class UserData
 	{
-		//private static string _hostName = "https://localhost:44342/";
+		//private static string _hostName = "http://localhost:80/";
 		private static string _hostName = "http://autolugansk.ru/";
 
 		public static string Host = _hostName;
