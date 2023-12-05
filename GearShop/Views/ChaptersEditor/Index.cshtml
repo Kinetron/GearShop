@@ -10,104 +10,105 @@
 <button id="editMainPageBtn" type="button">Редактировать страницу</button>
 
 
-<script src="ckeditor/ckeditor.js" type="text/javascript"></script>
 <button id="saveMainPageBtn" type="button">Сохранить</button>
 
 <button id="newChartBtn" type="button">Новая глава</button>
 
 <script type="text/javascript">
-$(document).ready(function() {
-	ChaptersEditorScript.init();
-});
 
-const ChaptersEditorScript = {
-	editor: null,
+	$(document).ready(function() {
+		ChaptersEditorScript.init();
+	});
 
-	init() {
-		$('#saveMainPageBtn').hide();
+	const ChaptersEditorScript = {
+		editor: null,
 
-		$('#editMainPageBtn').puibutton({
-			click: function(event) {
-				ChaptersEditorScript.editChapter(null);
+		init() {
+			$('#saveMainPageBtn').hide();
 
-				$('#editMainPageBtn').hide();
-				$('#saveMainPageBtn').show();
-			}
-		});
+			$('#editMainPageBtn').puibutton({
+				click: function(event) {
+					ChaptersEditorScript.editChapter(null);
 
-		$('#saveMainPageBtn').puibutton({
-			click: function(event) {
-				ChaptersEditorScript.saveChapter(null, () => {
-					$('#saveMainPageBtn').hide();
-					$('#editMainPageBtn').show();
-					location.reload(true);
-				});
-			}
-		});
+					$('#editMainPageBtn').hide();
+					$('#saveMainPageBtn').show();
+				}
+			});
+
+			$('#saveMainPageBtn').puibutton({
+				click: function(event) {
+					ChaptersEditorScript.saveChapter(null, () => {
+						$('#saveMainPageBtn').hide();
+						$('#editMainPageBtn').show();
+						location.reload(true);
+					});
+				}
+			});
 
 
-		$('#newChartBtn').puibutton({
-			click: function(event) {
+			$('#newChartBtn').puibutton({
+				click: function(event) {
 				
-			}
-		});
+				}
+			});
 			
-	},
+		},
 
-	@*Редактирование раздела*@
-	editChapter(id) {
+		@*Редактирование раздела*@
+		editChapter(id) {
 
-		let content = '';
+			let content = '';
 
-		@*Текущяя страница.*@
-		if (id == null) {
-			content = $('#pageContent').html();
+			@*Текущяя страница.*@
+			if (id == null) {
+				content = $('#pageContent').html();
 
-		} else {
+			} else {
+
+			}
+
+			ClassicEditor
+				.create(document.querySelector('#editorControl'),
+					{
+
+						// toolbar: [ 'heading', '|', 'bold', 'italic', 'link' ]
+					})
+				.then(editor => {
+					window.editor = editor;
+					ChaptersEditorScript.editor = editor;
+					editor.setData(content);
+				})
+				.catch(err => {
+					console.error(err.stack);
+				});
+		},
+	
+		saveChapter(id, success) {
+			const text = ChaptersEditorScript.editor.getData();
+
+			$.ajax({
+				url: '@Url.Action("Save","ChaptersEditor")',
+				method: "POST",
+				data: { text: text, id: id},
+
+				beforeSend: function() {
+					//labelProcess.text('Загрузка файлов в базу данных…');
+				},
+				success: function(data) {
+					CommonScript.showMessage('info', 'Успешно', '');
+
+					ChaptersEditorScript.editor.destroy().catch(error => {
+						console.log( error );
+					} );
+
+					success();
+				},
+				error: function(error) {
+					console.log(error);
+					CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
+				}
+			});
 
 		}
-
-		ClassicEditor
-			.create(document.querySelector('#editorControl'),
-				{
-					// toolbar: [ 'heading', '|', 'bold', 'italic', 'link' ]
-				})
-			.then(editor => {
-				window.editor = editor;
-				ChaptersEditorScript.editor = editor;
-				editor.setData(content);
-			})
-			.catch(err => {
-				console.error(err.stack);
-			});
-	},
-	
-	saveChapter(id, success) {
-		const text = ChaptersEditorScript.editor.getData();
-
-		$.ajax({
-			url: '@Url.Action("Save","ChaptersEditor")',
-			method: "POST",
-			data: { text: text, id: id},
-
-			beforeSend: function() {
-				//labelProcess.text('Загрузка файлов в базу данных…');
-			},
-			success: function(data) {
-				CommonScript.showMessage('info', 'Успешно', '');
-
-				ChaptersEditorScript.editor.destroy().catch(error => {
-					console.log( error );
-				} );
-
-				success();
-			},
-			error: function(error) {
-				console.log(error);
-				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
-			}
-		});
-
 	}
-}
 </script>
