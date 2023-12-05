@@ -29,7 +29,6 @@
 <header>
 	<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
 		<div class="container-fluid">
-			<a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Авто запчасти</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
 			        aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
@@ -179,8 +178,8 @@ const MainMenuScript = {
 const PageEditorScript = {
 	_editor: null,
 
-	@*Редактирование раздела*@
-	editPage(name) {
+	@*Редактирование страницы*@
+	editPage() {
 	    let content = $('#pageContent').html();
 
 		ClassicEditor
@@ -199,6 +198,119 @@ const PageEditorScript = {
 			});
 	},
 	
+	@*Добавление статьи на страницу*@
+	addArticle() {
+		ClassicEditor
+			.create(document.querySelector('#articleEditorControl'),
+				{
+
+					// toolbar: [ 'heading', '|', 'bold', 'italic', 'link' ]
+				})
+			.then(editor => {
+				window.editor = editor;
+				PageEditorScript._editor = editor;
+			})
+			.catch(err => {
+				console.error(err.stack);
+			});
+	},
+
+	@*Сохранение новой статьи*@
+	saveNewArticle(parentPageName, success) {
+
+		const title = PageEditorScript._editor.plugins.get('Title').getTitle();
+		const body  = PageEditorScript._editor.plugins.get('Title').getBody();
+
+		//string title, string content, string parentPageName)
+		$.ajax({
+			url: '@Url.Action("AddArticle","PageEditor")',
+			method: "POST",
+			data: { title: title, content: body, parentPageName: parentPageName },
+
+			beforeSend: function() {
+				//labelProcess.text('Загрузка файлов в базу данных…');
+			},
+			success: function(data) {
+				CommonScript.showMessage('info', 'Успешно', '');
+
+				PageEditorScript._editor.destroy().catch(error => {
+					console.log( error );
+				} );
+
+				success();
+			},
+			error: function(error) {
+				console.log(error);
+				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
+			}
+		});
+	},
+
+	editArticle(id) {
+		$.ajax({
+			url: '@Url.Action("GetArticle", "PageEditor")',
+			method: "GET",
+			data: { id: id },
+
+			beforeSend: function () {
+				//labelProcess.text('Загрузка файлов в базу данных…');
+			},
+			success: function (data) {
+				
+				ClassicEditor
+					.create(document.querySelector('#articleEditorControl'),
+						{
+
+							// toolbar: [ 'heading', '|', 'bold', 'italic', 'link' ]
+						})
+					.then(editor => {
+						const content = JSON.parse(data);
+						editor.setData(content.title + content.content);
+						window.editor = editor;
+						PageEditorScript._editor = editor;
+					})
+					.catch(err => {
+						console.error(err.stack);
+					});
+			},
+			error: function (error) {
+				console.log(error);
+				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
+			}
+		});
+	},
+
+	@*Сохранение статьи*@
+	saveExistsArticle(id, success) {
+
+		const title = PageEditorScript._editor.plugins.get('Title').getTitle();
+		const body = PageEditorScript._editor.plugins.get('Title').getBody();
+
+		//string title, string content, string parentPageName)
+		$.ajax({
+			url: '@Url.Action("UpdateArticle", "PageEditor")',
+			method: "POST",
+			data: { title: title, content: body, id: id },
+
+			beforeSend: function () {
+				//labelProcess.text('Загрузка файлов в базу данных…');
+			},
+			success: function (data) {
+				CommonScript.showMessage('info', 'Успешно', '');
+
+				PageEditorScript._editor.destroy().catch(error => {
+					console.log(error);
+				});
+
+				success();
+			},
+			error: function (error) {
+				console.log(error);
+				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
+			}
+		});
+	},
+
 	@*Сохраняет страницу*@
 	savePage(pageName, success) {
 		const text = PageEditorScript._editor.getData();
@@ -225,7 +337,6 @@ const PageEditorScript = {
 				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
 			}
 		});
-
 	}
 }
 

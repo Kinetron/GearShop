@@ -97,11 +97,9 @@
 		{
 			onAuth: (data) => {
 				$.ajax({
-					url: '@Url.Action("VkLogin", "Login")',
-					type: "POST",
-					data: {
-						token: JSON.stringify(data)
-			},
+					url: '@Url.Action("GetParagraphs", "Articles")',
+					type: "GET",
+					data: { "ArticlesPage" },
 					success: function() {
 						window.location.href = '@Url.Action("Index","ProductList")';
 					},

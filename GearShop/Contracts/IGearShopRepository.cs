@@ -107,17 +107,34 @@ namespace GearShop.Contracts
 		/// </summary>
 		/// <returns></returns>
 		Task<string> GetChapterContent(int? parentId);
-
-		/// <summary>
-		/// Возвращает список глав раздела «Статьи»
-		/// </summary>
-		/// <returns></returns>
-		Task<List<string>> GetChapterList();
-
-		Task<bool> AddChapter(int parentId);
+		
 		Task<bool> SaveChapter(string text, int? chapterId);
 		
 		Task<string> GetPageContent(string pageName);
 		Task<bool> SavePageContent(string text, string pageName);
-	}
+
+		/// <summary>
+		/// Возвращает список глав для родительской страницы.
+		/// </summary>
+		/// <param name="parentPageName"></param>
+		/// <returns></returns>
+		Task<List<InfoPageDto>> GetArticleList(string parentPageName);
+
+		/// <summary>
+		/// Возвращает статью
+		/// </summary>
+		/// <returns></returns>
+		Task<InfoPageDto> GetArticle(int id);
+
+		/// <summary>
+		/// Добавляет статью.
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="pageName"></param>
+		/// <returns></returns>
+		Task<bool> AddArticle(string title, string content, string parentPageName);
+
+
+		Task<bool> UpdateArticle(string title, string content, int id);
+    }
 }

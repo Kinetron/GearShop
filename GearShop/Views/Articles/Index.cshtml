@@ -1,3 +1,155 @@
-﻿<div id="pageContent">
-	@(Html.Raw((string)ViewData["MainContent"]))
+﻿<h3>Статьи на сайте</h3>
+<button id="addParagraph" class="hide-block" type="button">Добавить статью</button>
+
+<div id="pageContent">
 </div>
+
+<section id="articles">
+</section>
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+		InfoPageScript.init();
+	});
+	
+const InfoPageScript = {
+	  init() {
+		  $.ajax({
+			  url: '@Url.Action("GetAccountInfo", "Login")',
+			  type: "GET",
+			  success: function (response) {
+				  const inAdminMode = response.isAdmin;
+
+				  if (inAdminMode) {
+						InfoPageScript._addEditorControls();
+				  }
+
+				  InfoPageScript._addPageContent(inAdminMode);
+			  },
+			  error: function() {
+					CommonScript.showMessage('error', 'Ошибка', 'Ошибка получения данных.');
+			  }
+		  });
+	  },
+
+	  _addPageContent(adminMode) {
+		  $.ajax({
+			  url: '@Url.Action("GetArticles", "Articles")',
+			  type: "POST",
+			  data: { parentPageName: 'ArticlesPage'},
+			  success: function(data) {
+				  InfoPageScript._createContent(data, adminMode);
+			  },
+			  error: function() {
+				  CommonScript.showMessage('error', 'Ошибка', 'Ошибка входа.');
+			  }
+		  });
+	  },
+
+	  _createContent(data, adminMode) {
+		  const list = JSON.parse(data);
+
+		  let text = '';
+		  list.forEach((item) => {
+			  text += this._fillArticleBlock(item, adminMode);
+		  });
+
+		  $('#articles').html(text);
+	  },
+
+	  _fillArticleBlock(item, adminMode) {
+		  let editBtn = '';  
+
+		  if (adminMode) {
+			  editBtn = `<div>
+								<button id="editArticleBtn${item.id}" type="button" onClick="InfoPageScript.editArticle(${item.id});"
+									class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">
+									<i class="fa fa-fw fa-edit"></i></button>
+							</div>	`;
+		  }
+		  @*Переделать на шаблон!*@
+
+			  if (item.content.length !== 0) {
+				  item.content = item.content.substring(0, 150);
+			  }
+
+			return `	
+			<article>
+			 <header>
+				<div>
+					<h4>
+						<a href="@Url.Action("Article", "Articles")?id=${item.id}">
+							<font style="vertical-align: inherit;">
+											${item.title}
+							</font>
+						</a>
+					</h4>
+				</div>
+			</header>
+			<div>
+				<span>
+							<font style="vertical-align: inherit;">${item.content}
+					</font>
+				</span>
+			</div>
+				${editBtn}
+		</article>`;
+		},
+
+	  _addEditorControls() {
+			$('#pageContent').before(
+				'<button id="saveArticleBtn" class="hide-block" type="button">Сохранить</button>' +
+				'<button id="addArticlesBtn" class="hide-block" type="button">Добавить</button>' +
+				'<div id="articleEditorControl"></div>');
+			const saveArticleBtn = $('#saveArticleBtn');
+			const addArticlesBtn = $('#addArticlesBtn');
+			addArticlesBtn.show();
+			saveArticleBtn.hide();
+
+			addArticlesBtn.puibutton({
+				click: function (event) {
+					addArticlesBtn.hide();
+					saveArticleBtn.show();
+
+					PageEditorScript.addArticle();
+				}
+			});
+
+			saveArticleBtn.puibutton({
+				click: function (event) {
+					const id = $('#saveArticleBtn').attr('editingId');
+
+					if (id === undefined) {
+						PageEditorScript.saveNewArticle('ArticlesPage',
+							() => {
+								InfoPageScript.exitFromEditMode();
+							});
+					} else 
+					{
+						PageEditorScript.saveExistsArticle(id,
+							() => {
+								InfoPageScript.exitFromEditMode();
+							});
+					}
+				}
+			});
+	  },
+
+	  exitFromEditMode() {
+		  $('#saveArticleBtn').hide();
+		  $('#addArticlesBtn').show();
+		  location.reload(true);
+	  },
+
+	  editArticle(id) {
+		  PageEditorScript.editArticle(id);
+
+		  const saveArticleBtn = $('#saveArticleBtn');
+		  $('#addArticlesBtn').hide();
+		  saveArticleBtn.show();
+		  
+		  $('#saveArticleBtn').attr('editingId', id);
+	  }
+}
+</script>
