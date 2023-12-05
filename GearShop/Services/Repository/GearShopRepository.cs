@@ -601,5 +601,30 @@ namespace GearShop.Services.Repository
 				return false;
 			}
 		}
+
+		public async Task<string> GetPageContent(string pageName)
+		{
+			Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == pageName);
+			return page?.Content;
+		}
+
+		public async Task<bool> SavePageContent(string text, string pageName)
+		{
+			try
+			{
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == pageName);
+
+				if (page == null) return false;
+				
+				page.Content = text;
+				await _dbContext.SaveChangesAsync();
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+		}
     }
 }

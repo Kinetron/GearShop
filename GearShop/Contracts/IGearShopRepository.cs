@@ -116,5 +116,8 @@ namespace GearShop.Contracts
 
 		Task<bool> AddChapter(int parentId);
 		Task<bool> SaveChapter(string text, int? chapterId);
+		
+		Task<string> GetPageContent(string pageName);
+		Task<bool> SavePageContent(string text, string pageName);
 	}
 }

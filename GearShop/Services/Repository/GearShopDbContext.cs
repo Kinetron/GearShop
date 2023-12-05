@@ -73,6 +73,11 @@ namespace GearShop.Services.Repository
 		/// </summary>
 		public DbSet<Chapter> Chapters { get; set; }
 
+		/// <summary>
+		/// Содержимое страниц.
+		/// </summary>
+		public DbSet<Page> Pages { get; set; }
+
 		public string GetUserGroupRole(string userName)
         {
            return this.Database.SqlQueryRaw<string>("SELECT [dbo].GetUserGroupRole(@userName) as value",
@@ -125,6 +130,15 @@ namespace GearShop.Services.Repository
 				{
 					tb.HasTrigger("tr_Chapters_LogIns");
 					tb.HasTrigger("tr_Chapters_LogUpd");
+				});
+			});
+
+			modelBuilder.Entity<Page>(entity =>
+			{
+				entity.ToTable(tb =>
+				{
+					tb.HasTrigger("tr_Pages_LogIns");
+					tb.HasTrigger("tr_Pages_LogUpd");
 				});
 			});
 		}

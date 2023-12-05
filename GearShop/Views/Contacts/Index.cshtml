@@ -1,4 +1,7 @@
-﻿<style>
+﻿@using GearShop.Models.ViewModels
+@model ContactsPageViewModel;
+
+<style>
 	.contact-image {
 		height: 200px;
 		width: 760px;
@@ -8,29 +11,15 @@
 		width: 800px;
 	}
 </style>
-
+<div id="allowEdit" pageName="ContactsPage"></div>
 <div id="mainPаnel" class="main-panel">
 	<p>
 		<img src="images/main1.jpg" class="contact-image" />
 	</p>
-	<p>
-		Мы находимся: <br>
-		ул. Херсонская, 7В<br>
-		+7 959 127 14 51 (WatsApp, Telegram) <br>
-	</p>
-	<p>
-		График работы<br>
-		Пн – Птн с 9:00 до 17:00<br>
-		Суббота до 14:00<br>
-	</p>
-	<p>
-		Авторынок<br>
-		5й ряд, модуль 276, с 9:00 до 13:00 – без выходных<br>
-		+7 959 252 60 20<br>
-	</p>
-	<p>
-		Имеется доставка в разные города.<br>
-	</p>
+	
+	<div id="pageContent">
+		@Html.Raw(Model.PageContent)
+	</div>
 </div>
 
 <script type="text/javascript">
