@@ -118,13 +118,13 @@ namespace GearShop.Contracts
 		/// </summary>
 		/// <param name="parentPageName"></param>
 		/// <returns></returns>
-		Task<List<InfoPageDto>> GetArticleList(string parentPageName);
+		Task<List<ArticleDto>> GetArticleList(string parentPageName);
 
 		/// <summary>
 		/// Возвращает статью
 		/// </summary>
 		/// <returns></returns>
-		Task<InfoPageDto> GetArticle(int id);
+		Task<ArticleDto> GetArticle(int id);
 
 		/// <summary>
 		/// Добавляет статью.
@@ -132,9 +132,16 @@ namespace GearShop.Contracts
 		/// <param name="text"></param>
 		/// <param name="pageName"></param>
 		/// <returns></returns>
-		Task<bool> AddArticle(string title, string content, string parentPageName);
+		Task<bool> AddArticle(ArticleDto dto);
 
 
-		Task<bool> UpdateArticle(string title, string content, int id);
-    }
+		Task<bool> UpdateArticle(ArticleDto dto);
+
+		/// <summary>
+		/// Удаляет статью.
+		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
+		Task<bool> DeleteArticle(int id);
+	}
 }

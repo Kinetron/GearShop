@@ -1,4 +1,5 @@
 ﻿using GearShop.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting.Internal;
 using Newtonsoft.Json;
@@ -139,6 +140,20 @@ namespace GearShop.Controllers
 			string json = JsonConvert.SerializeObject(result);
 
 			return Ok(json);
+		}
+
+
+		[HttpPost]
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> UploadArticleImage(IFormFile file)
+		{
+			string url = await _fileStorage.SaveArticleFile(file);
+			if (string.IsNullOrEmpty(url))
+			{
+				return StatusCode(507);
+			}
+			
+			return Json(url);
 		}
 	}
 }

@@ -37,12 +37,13 @@ namespace GearShop.Controllers.Shop
 			var result = await _gearShopRepository.GetArticle(id);
 			var model = new ArticleViewModel()
 			{
-				PageContent = "Ошибка"
+				Content = "Ошибка"
 			};
 
 			if (result != null)
 			{
-				model.PageContent = result.Title + result.Content;
+				model.Title = result.Title;
+				model.Content = result.Content;
 			}
 
 			return View(model);

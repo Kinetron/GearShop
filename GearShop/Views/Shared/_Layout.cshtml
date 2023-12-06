@@ -24,6 +24,9 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" type="text/css" href="~/primeui/themes/aristo/theme.css">
     <link href="~/primeui/primeui-all.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="~/ckeditor/content-styles.css" type="text/css">
+	<link rel="stylesheet" href="~/ckeditor/imageresize.css" type="text/css">
+    
 </head>
 <body>
 <header>
@@ -91,6 +94,8 @@
 
 
 <script src="ckeditor/ckeditor.js" type="text/javascript"></script>
+<script src="ckeditor/uploadAdapter.js" type="text/javascript"></script>
+
 <script type="text/javascript">
 $(document).ready(function() {
 	MainMenuScript.init();
@@ -175,6 +180,14 @@ const MainMenuScript = {
 	  }
 }
 
+//Вынести в связанный скрипт
+function GearUploadAdapterPlugin( editor ) {
+	editor.plugins.get( 'FileRepository' ).createUploadAdapter = ( loader ) => {
+		// Configure the URL to the upload script in your back-end here!
+			return new GearUploadAdapter(loader, '@Url.Action("UploadArticleImage", "UploadData")');
+	};
+}
+
 const PageEditorScript = {
 	_editor: null,
 
@@ -203,7 +216,7 @@ const PageEditorScript = {
 		ClassicEditor
 			.create(document.querySelector('#articleEditorControl'),
 				{
-
+					extraPlugins: [GearUploadAdapterPlugin],
 					// toolbar: [ 'heading', '|', 'bold', 'italic', 'link' ]
 				})
 			.then(editor => {
@@ -215,17 +228,39 @@ const PageEditorScript = {
 			});
 	},
 
+	@*Возвращает описание статьи(описание и картинка)*@
+	_articleInfo(body) {
+		const data = {
+			imageSrc: '',
+			description: '' 
+		};
+		
+		if (body.length !== 0) {
+			data.imageSrc = $(body).find('img:first').attr('src');
+			data.description = $(body).filter("p:first").text(); @*Первый параграф на превью*@
+		}
+
+		return data;
+	},
+
 	@*Сохранение новой статьи*@
 	saveNewArticle(parentPageName, success) {
 
-		const title = PageEditorScript._editor.plugins.get('Title').getTitle();
 		const body  = PageEditorScript._editor.plugins.get('Title').getBody();
+		const info = this._articleInfo(body);
 
-		//string title, string content, string parentPageName)
+		const dto = {
+			title: PageEditorScript._editor.plugins.get('Title').getTitle(),
+			titleImage: info.imageSrc,
+			description: info.description,
+			content: body,
+			parentPageName: parentPageName
+		};
+
 		$.ajax({
 			url: '@Url.Action("AddArticle","PageEditor")',
 			method: "POST",
-			data: { title: title, content: body, parentPageName: parentPageName },
+			data: { data: JSON.stringify(dto) },
 
 			beforeSend: function() {
 				//labelProcess.text('Загрузка файлов в базу данных…');
@@ -246,6 +281,44 @@ const PageEditorScript = {
 		});
 	},
 
+	@*Сохранение существующей статьи*@
+	saveExistsArticle(id, success) {
+		
+		const body  = PageEditorScript._editor.plugins.get('Title').getBody();
+		const info = this._articleInfo(body);
+
+		const dto = {
+			id: id,
+			title: PageEditorScript._editor.plugins.get('Title').getTitle(),
+			titleImage: info.imageSrc,
+			description: info.description,
+			content: body,
+		};
+		
+		$.ajax({
+			url: '@Url.Action("UpdateArticle", "PageEditor")',
+			method: "POST",
+			data: { data: JSON.stringify(dto) },
+
+			beforeSend: function () {
+				//labelProcess.text('Загрузка файлов в базу данных…');
+			},
+			success: function (data) {
+				CommonScript.showMessage('info', 'Успешно', '');
+
+				PageEditorScript._editor.destroy().catch(error => {
+					console.log(error);
+				});
+
+				success();
+			},
+			error: function (error) {
+				console.log(error);
+				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
+			}
+		});
+	},
+
 	editArticle(id) {
 		$.ajax({
 			url: '@Url.Action("GetArticle", "PageEditor")',
@@ -260,6 +333,7 @@ const PageEditorScript = {
 				ClassicEditor
 					.create(document.querySelector('#articleEditorControl'),
 						{
+							extraPlugins: [GearUploadAdapterPlugin],
 
 							// toolbar: [ 'heading', '|', 'bold', 'italic', 'link' ]
 						})
@@ -280,32 +354,20 @@ const PageEditorScript = {
 		});
 	},
 
-	@*Сохранение статьи*@
-	saveExistsArticle(id, success) {
-
-		const title = PageEditorScript._editor.plugins.get('Title').getTitle();
-		const body = PageEditorScript._editor.plugins.get('Title').getBody();
-
-		//string title, string content, string parentPageName)
+	@*Удалить статью*@
+		deleteArticle(id, success) {
 		$.ajax({
-			url: '@Url.Action("UpdateArticle", "PageEditor")',
+			url: '@Url.Action("DeleteArticle", "PageEditor")',
 			method: "POST",
-			data: { title: title, content: body, id: id },
+			data: { id: id },
 
 			beforeSend: function () {
 				//labelProcess.text('Загрузка файлов в базу данных…');
 			},
 			success: function (data) {
-				CommonScript.showMessage('info', 'Успешно', '');
-
-				PageEditorScript._editor.destroy().catch(error => {
-					console.log(error);
-				});
-
 				success();
 			},
 			error: function (error) {
-				console.log(error);
 				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
 			}
 		});
