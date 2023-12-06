@@ -92,10 +92,6 @@
 </body>
 </html>
 
-
-<script src="ckeditor/ckeditor.js" type="text/javascript"></script>
-<script src="ckeditor/uploadAdapter.js" type="text/javascript"></script>
-
 <script type="text/javascript">
 $(document).ready(function() {
 	MainMenuScript.init();
@@ -124,12 +120,17 @@ const MainMenuScript = {
 						
 
 						if (response.isAdmin == true) {
-							$('#adminLink').show();
+							@*Для медленных соединений не грузим лишние файлы, нужные только админу.*@
+							CommonScript.loadJsFile('ckeditor/uploadAdapter.js', () => { });
+							CommonScript.loadJsFile('ckeditor/ckeditor.js', () => {
 
-							@*Разрешено редактирование страницы*@
-							if ($('#allowEdit').length)
-								MainMenuScript.addEditPageBlock($('#allowEdit').attr('pageName'));
-							}
+								$('#adminLink').show();
+
+								@*Разрешено редактирование страницы*@
+								if ($('#allowEdit').length)
+									MainMenuScript.addEditPageBlock($('#allowEdit').attr('pageName'));
+							});
+						}
 
 						if (response.pictureUrl !== undefined && response.pictureUrl.length !== 0) {
 							$('#userIcon').attr('src', response.pictureUrl);
@@ -548,6 +549,15 @@ const CommonScript = {
 			if (Number.isNaN(dig)) return false;
 
 		return true;
+	},
+
+	@*Загружает js файл*@
+	loadJsFile(file, onLoad) {
+		const script = document.createElement("script");
+		script.type = "application/javascript";
+		script.onload = onLoad;
+		script.src = file;
+		document.body.appendChild(script);
 	}
 }
 </script>
