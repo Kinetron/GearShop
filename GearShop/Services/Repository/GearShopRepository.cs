@@ -14,7 +14,14 @@ using Newtonsoft.Json;
 using Serilog;
 using OrderItemDto = GearShop.Models.OrderItemDto;
 using System.Net;
+using GearShop.Enums;
 using Product = GearShop.Models.Entities.Product;
+using System.Threading.Channels;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using static System.Net.Mime.MediaTypeNames;
+using Page = GearShop.Models.Entities.Page;
+using Humanizer;
+using Azure;
 
 namespace GearShop.Services.Repository
 {
@@ -71,7 +78,7 @@ namespace GearShop.Services.Repository
         /// Получить список всех продуктов.
         /// </summary>
         /// <returns></returns>
-        public List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
+        public async Task<List<ProductDto>> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
         {
 	        var data = _dbContext.Products.Where(x=>x.Deleted == 0);
 
@@ -92,7 +99,7 @@ namespace GearShop.Services.Repository
 
 			//Переделать на нормальный sql, будет гораздо быстрее.
 
-			return data.Select(product =>
+			var list = await data.Select(product =>
 				 new ProductDto()
 					{
 						Id = product.Id,
@@ -104,14 +111,45 @@ namespace GearShop.Services.Repository
 				)
 				   .Skip((currentPage - 1) * itemsPerPage)
 				   .Take(itemsPerPage)
-				   .ToList();
+				   .ToListAsync();
+				
+				return list.Select(p =>
+				   {
+					   p.Amount = ProductThresholdConvert(p.Amount);
+					   return p;
+				   }).ToList();
+        }
+
+		/// <summary>
+		/// Удаляет реальное количество, и заменяет на пороговые значения(Нет, Мало, Достаточно).
+		/// </summary>
+		/// <param name="amount"></param>
+		/// <returns></returns>
+		private int ProductThresholdConvert(int amount)
+        {
+	        if (amount == (int)ProductThresholdEnum.EmptyThreshold)
+	        {
+		        return (int)ProductThresholdEnum.Empty;
+	        }
+	        else if(amount < (int)ProductThresholdEnum.NotEnoughThreshold)
+	        {
+		        return (int)ProductThresholdEnum.NotEnough;
+			}
+			else if (amount < (int)ProductThresholdEnum.EnoughThreshold)
+	        {
+		        return (int)ProductThresholdEnum.Enough;
+			}
+	        else
+	        {
+		        return (int)ProductThresholdEnum.Lot;
+			}
         }
 
 		/// <summary>
 		/// Возвращает количество продуктов.
 		/// </summary>
 		/// <returns></returns>
-		public int GetProductCount(string searchText, int productTypeId, bool available)
+		public async Task<int> GetProductCount(string searchText, int productTypeId, bool available)
         {
 			var data = _dbContext.Products.Where(x => x.Deleted == 0);
 
@@ -127,11 +165,11 @@ namespace GearShop.Services.Repository
 
 			if (string.IsNullOrEmpty(searchText))
 	        {
-		        return data.Count();
+		        return await data.CountAsync();
 			}
 	        else
 	        {
-				return data.Where(x=>x.Name.Contains(searchText)).Count();
+				return await data.Where(x=>x.Name.Contains(searchText)).CountAsync();
 			}
         }
 
@@ -139,7 +177,7 @@ namespace GearShop.Services.Repository
 		/// Получает список всех продуктов на складе.
 		/// </summary>
 		/// <returns></returns>
-		public List<ProductDto> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
+		public async Task<List<ProductDto>> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available)
 		{
 			var data = _dbContext.Products.Where(x => x.Deleted == 0);
 
@@ -160,7 +198,7 @@ namespace GearShop.Services.Repository
 
 			//Переделать на нормальный sql, будет гораздо быстрее.
 
-			return data.Select(product =>
+			return await data.Select(product =>
 					new ProductDto()
 					{
 						Id = product.Id,
@@ -173,7 +211,7 @@ namespace GearShop.Services.Repository
 				)
 				.Skip((currentPage - 1) * itemsPerPage)
 				.Take(itemsPerPage)
-				.ToList();
+				.ToListAsync();
 		}
 
 		/// <summary>
@@ -442,6 +480,8 @@ namespace GearShop.Services.Repository
 					Rest = model.Amount,
 					ProductTypeId = model.ProductTypeId,
 					InfoSourceId = infoSourceId.Id,
+					Created = DateTime.Now,
+					Changed = DateTime.Now
 				};
 
                await _dbContext.Products.AddAsync(product);
@@ -487,7 +527,9 @@ namespace GearShop.Services.Repository
 				product.ImageName = model.ImageName;
 				product.Rest = model.Amount;
 				product.ProductTypeId = model.ProductTypeId;
-				
+				product.Changed = DateTime.Now;
+
+
 				await _dbContext.SaveChangesAsync();
 			}
 			catch (Exception ex)
@@ -511,6 +553,7 @@ namespace GearShop.Services.Repository
 				}
 
 				product.Deleted = 1;
+				product.Changed = DateTime.Now;
 				await _dbContext.SaveChangesAsync();
 			}
 			catch (Exception ex)
@@ -520,6 +563,162 @@ namespace GearShop.Services.Repository
 			}
 
 			return true;
+		}
+
+		public async Task<ArticleDto> GetPageContent(string pageName)
+		{
+			var page = (await _dbContext.Pages.Where(x => x.Name == pageName && x.Deleted == 0)
+				.Select(x=> new Page()
+				{
+					Id = x.Id,
+					Content = x.Content
+				})
+				.SingleOrDefaultAsync())
+				?? new Page();
+
+			return new ArticleDto()
+			{
+				Id = page.Id,
+				Content = page.Content
+			};
+		}
+
+		public async Task<bool> UpdatePageContent(int id, string text)
+		{
+			try
+			{
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id);
+
+				if (page == null) return false;
+				
+				page.Content = text;
+				await _dbContext.SaveChangesAsync();
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+		}
+
+		public async Task<List<ArticleDto>> GetArticleList(int pageId)
+		{
+			return await _dbContext.Pages.Where(x=>x.ParentId == pageId && x.Deleted == 0)
+			.Select(x => new ArticleDto()
+			{
+				Id = x.Id,
+				Title = x.Title,
+				Description = x.Description,
+				TitleImage = x.TitleImage,
+				Content = x.Content,
+			}).ToListAsync(); 
+		}
+
+		/// <summary>
+		/// Возвращает статью
+		/// </summary>
+		/// <returns></returns>
+		public async Task<ArticleDto> GetArticle(int id)
+		{
+			try
+			{
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id && x.Deleted == 0);
+
+				if (page == null) return null;
+
+				return new ArticleDto()
+				{
+					Id = page.Id,
+					Title = page.Title,
+					Description = page.Description,
+					TitleImage = page.TitleImage,
+					Content = page.Content,
+				};
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// Добавляет статью.
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="pageName"></param>
+		/// <returns></returns>
+		public async Task<bool> AddArticle(ArticleDto dto)
+		{
+			try
+			{
+				Page article = new Page()
+				{
+					ParentId = dto.ParentId,
+					Title = dto.Title,
+					TitleImage = dto.TitleImage,
+					Description = dto.Description,
+					Content = dto.Content,
+				};
+
+				await _dbContext.Pages.AddAsync(article);
+				await _dbContext.SaveChangesAsync();
+
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+		}
+
+		public async Task<bool> UpdateArticle(ArticleDto dto)
+		{
+			try
+			{
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == dto.Id);
+				if (page == null) return false;
+
+				page.Title = dto.Title;
+				page.TitleImage = dto.TitleImage;
+				page.Description = dto.Description;
+				page.Content = dto.Content;
+
+				await _dbContext.SaveChangesAsync();
+
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Удаляет статью.
+		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
+		public async Task<bool> DeleteArticle(int id)
+		{
+			try
+			{
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id);
+				if (page == null) return false;
+
+				page.Deleted = 1;
+				await _dbContext.SaveChangesAsync();
+
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
 		}
     }
 }

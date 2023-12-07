@@ -1,4 +1,7 @@
 ﻿@using GearShop.Models.Dto
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using GearShop.Models.ViewModels
+@model PageViewModel
 @{
     ViewData["Title"] = "Главная";
 }
@@ -6,40 +9,64 @@
 <style>
 	.contact-image {
 		height: 200px;
+		width: 760px;
+	}
+
+	.main-panel {
 		width: 800px;
 	}
+
+	.contact-label {
+		font-weight: bold;
+	}
+
 </style>
 
+@*Добавление кнопок редактирования в режиме администрирования.*@
+<div editable-block="true" content-element-name="pageContent" page-id="@Model.Id"></div>
 <div class="text-start">
-		<div id="galleryControl">
-			<ul>
-				@{
+	<div id="galleryControl">
+		<ul>
+			@{
 				foreach (var item in (List<SlaiderMainPageDto>)ViewData["SlaiderData"])
-					{
+				{
 					<li><img src="gallery/@item.FileName" alt="@item.Description" title="@item.Title" /></li>
-					}
 				}
-			</ul>
+			}
+		</ul>
+	</div>
+
+	<div id="mainPаnel" class="main-panel">
+		<p>
+			<button id="toBuyBtn" type="button">К покупкам</button>
+		</p>
+		
+		<div id="pageContent">
+			@Html.Raw(Model.PageContent)
 		</div>
-		<div>
-			<h3 class="display-4">Магазин авто запчастей</h3>
-			<p>
-				Добро пожаловать в наш магазин.
-				Тут вы можете найти разные товары.
-			</p>
-			<p>
-			<h3><a class="nav-link text-dark" asp-area="" asp-controller="ProductList" asp-action="Index">К покупкам</a></h3>
-			<p>
-			<p>
-			<img src="images/contacts.png" class="contact-image" />
-			</p>
-		</div>
+		<p>
+			<a class="nav-link text-dark contact-label" asp-controller="Contacts" asp-action="Index">Контакты</a>
+		</p>
+	</div>
 </div>
 
 <script type="text/javascript">
+	$(document).ready(function() {
+
+	});
+
+
 	$('#default').puipanel();
 	$('#galleryControl').puigalleria({
 		panelWidth: 800,
 		panelHeight: 200
+	});
+
+	$('#mainPаnel').puipanel();
+	
+	$('#toBuyBtn').puibutton({
+		click: function(event) {
+			window.location.href = '@Url.Action("Index", "ProductList")';
+		}
 	});
 </script>

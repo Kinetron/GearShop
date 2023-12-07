@@ -2,6 +2,9 @@
 using GearShop.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
+using GearShop.Models.ViewModels;
+using Newtonsoft.Json;
 
 namespace GearShop.Controllers
 {
@@ -18,20 +21,33 @@ namespace GearShop.Controllers
 
         public async Task<IActionResult> Index()
         {
-	        var slaiderData = await _gearShopRepository.MainPageSlaiderDataAsync();
-	        ViewData["SlaiderData"] = slaiderData; 
-            return View();
-        }
+			var slaiderData = await _gearShopRepository.MainPageSlaiderDataAsync();
+	        ViewData["SlaiderData"] = slaiderData;
+	        PageViewModel model = new PageViewModel();
 
-        public IActionResult Privacy()
-        {
-            return View();
+            var dto = await _gearShopRepository.GetPageContent("MainPage");
+            model.Id = dto.Id;
+            model.PageContent = dto.Content;
+	        return View(model);
         }
-
+        
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-    }
+
+        /// <summary>
+        /// Возвращает содержимое footer.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IActionResult> Footer()
+        {
+	        var dto = await _gearShopRepository.GetPageContent("Footer");
+	        if (string.IsNullOrEmpty(dto.Content)) return BadRequest();
+
+			return Ok(JsonConvert.SerializeObject(new {id = dto.Id, text = dto.Content}));
+        }
+
+	}
 }

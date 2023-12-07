@@ -21,4 +21,11 @@ public interface IFileStorage
 	/// <param name="file"></param>
 	/// <returns></returns>
 	Task<bool> WriteFile(IFormFile file);
+
+	/// <summary>
+	/// Сохраняет файлы статей.
+	/// </summary>
+	/// <param name="file"></param>
+	/// <returns></returns>
+	Task<string> SaveArticleFile(IFormFile file);
 }

@@ -1,9 +1,31 @@
 ﻿@using GearShop.Models.Dto.Authentication
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model AuthData
+@{
+	string googleAuthClientId = (string)ViewData["googleAuthClientId"];
+	string vkAppId = (string)ViewData["vkAppId"];
+}
+
+<style>
+	.row-padding-block {
+		padding-top: 10px;
+	}
+</style>
 
 <div align="center">
 	<h1>Вход в магазин</h1>
+	<div class="ui-grid ui-grid-responsive">
+		<div class="ui-grid-row">
+			<div class="ui-grid-col-6">
+				<div id="vk_auth"></div>
+			</div>
+		</div>
+		<div class="ui-grid-row row-padding-block">
+			<div class="ui-grid-col-6">
+				<div id="googleOauthButton"></div>
+			</div>
+		</div>
+	</div>
 	<div>
 		<form asp-controller="Login" asp-action="Authentication" method="post">
 			<div asp-validation-summary="All"></div>
@@ -11,14 +33,14 @@
 				<tr>
 					<td>Логин</td>
 					<td>
-						<input asp-for="Username" />
+						<input asp-for="Username"/>
 						<span asp-validation-for="Username"></span>
 					</td>
 				</tr>
 				<tr>
 					<td>Пароль</td>
 					<td>
-						<input type="password"  asp-for="Password" />
+						<input type="password" asp-for="Password"/>
 						<span asp-validation-for="Password"></span>
 					</td>
 				</tr>
@@ -30,3 +52,71 @@
 		</form>
 	</div>
 </div>
+
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script type="text/javascript">
+	function handleCredentialResponse(response) {
+
+		$.ajax({
+			url: '@Url.Action("GoogleLogin", "Login")',
+			type: "POST",
+			data: { 
+				token: response.credential
+			},
+			success: function() {
+				window.location.href = '@Url.Action("Index","ProductList")';
+			},
+			error: function() {
+				CommonScript.showMessage('error', 'Ошибка', 'Ошибка входа.');
+			}
+		});   
+	}
+
+	window.onload = function () {
+		google.accounts.id.initialize({
+			client_id: '@googleAuthClientId',
+			//ux_mode: "redirect",
+			//login_uri: "",
+			callback: (data) => {
+				handleCredentialResponse(data);
+			},
+		});
+		google.accounts.id.renderButton(
+			document.getElementById("googleOauthButton"),
+			{ theme: "outline", size: 'standart'}  @* customization attributes *@
+		);
+		google.accounts.id.prompt(); @* also display the One Tap dialog *@
+		}
+
+
+	VK.init({
+		apiId: @vkAppId
+	});
+
+	VK.Widgets.Auth('vk_auth',
+		{
+			onAuth: (data) => {
+				$.ajax({
+					url: '@Url.Action("VkLogin", "Login")',
+					type: "POST",
+					data: { token: JSON.stringify(data)},
+					success: function() {
+						window.location.href = '@Url.Action("Index","ProductList")';
+					},
+					error: function() {
+						CommonScript.showMessage('error', 'Ошибка', 'Ошибка входа.');
+					}
+				}); 
+			}
+		}
+	);
+
+	$(document).ready(function () {
+		
+	});
+
+	const AuthenticationScript = {
+
+
+	}
+</script>

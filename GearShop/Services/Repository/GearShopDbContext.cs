@@ -59,10 +59,25 @@ namespace GearShop.Services.Repository
 		public DbSet<InfoSource> InfoSource { get; set; }
 
 		/// <summary>
+		/// Правила синхронизации для продуктов из прайс листа.
+		/// </summary>
+		public DbSet<SynchronizationRules> SynchronizationRules { get; set; }
+		
+		/// <summary>
 		/// Хранит информацию о процессе синхронизации данных. Для прогресс бара.
 		/// </summary>
-		//public DbSet<PriceSynchronizeStatus> PriceSynchronizeStatus { get; set; }
+		public DbSet<PriceSynchronizeStatus> PriceSynchronizeStatus { get; set; }
 		
+		/// <summary>
+		/// Статьи.
+		/// </summary>
+		public DbSet<Chapter> Chapters { get; set; }
+
+		/// <summary>
+		/// Содержимое страниц.
+		/// </summary>
+		public DbSet<Page> Pages { get; set; }
+
 		public string GetUserGroupRole(string userName)
         {
            return this.Database.SqlQueryRaw<string>("SELECT [dbo].GetUserGroupRole(@userName) as value",
@@ -109,7 +124,23 @@ namespace GearShop.Services.Repository
 				});
 			});
 
-			//modelBuilder.Entity<PriceSynchronizeStatus>(builder => { builder.HasNoKey(); });
+			modelBuilder.Entity<Chapter>(entity =>
+			{
+				entity.ToTable(tb =>
+				{
+					tb.HasTrigger("tr_Chapters_LogIns");
+					tb.HasTrigger("tr_Chapters_LogUpd");
+				});
+			});
+
+			modelBuilder.Entity<Page>(entity =>
+			{
+				entity.ToTable(tb =>
+				{
+					tb.HasTrigger("tr_Pages_LogIns");
+					tb.HasTrigger("tr_Pages_LogUpd");
+				});
+			});
 		}
     }
 }

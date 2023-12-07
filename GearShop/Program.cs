@@ -1,15 +1,24 @@
+using System.Security.Claims;
 using System.Text;
 using Azure.Core;
 using GearShop.Contracts;
+using GearShop.Models.Dto.Authentication;
 using GearShop.Services;
 using GearShop.Services.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using static Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using WebMarkupMin.AspNetCore7;
 
 namespace GearShop
 {
@@ -17,31 +26,29 @@ namespace GearShop
     {
         public static void Main(string[] args)
         {
-            //Добавить нормальную обработку версий!
-            Console.WriteLine("Version 3");
+			//Добавить нормальную обработку версий!
+			Console.WriteLine("Version 7");
 			var builder = WebApplication.CreateBuilder(args);
             var config = builder.Configuration;
 
-            builder.Services.AddAuthentication(x =>
+			builder.Services.AddDbContext<GearShopDbContext>(options =>
+              options.UseSqlServer(config["MsSqlConnectionStrings:Default"]), ServiceLifetime.Transient);
+
+            builder.Services.AddTransient<IGearShopRepository, GearShopRepository>();
+
+            builder.Services.AddSingleton<IJwtAuth, JwtAuth>();
+            builder.Services.AddScoped<IIdentityService, IdentityService>();
+
+            builder.Services.AddScoped<IVkAuth, VkAuth>();
+			
+			builder.Services.AddAuthentication(x =>
             {
                 x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(x =>
             {
-                //x.TokenValidationParameters = new TokenValidationParameters()
-                //{
-                //    ValidIssuer = config["JwtSettings:Issuer"],
-                //    ValidAudience = config["JwtSettings:Audience"],
-                //    IssuerSigningKey = new SymmetricSecurityKey(
-                //        Encoding.UTF8.GetBytes(config["JwtSettings:Key"]!)),
-                //    ValidateIssuer = false,
-                //    ValidateAudience = false,
-                //    ValidateLifetime = true,
-                //    ValidateIssuerSigningKey = true
-                //};
-
-                x.TokenValidationParameters = new TokenValidationParameters()
+	            x.TokenValidationParameters = new TokenValidationParameters()
                 {
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(config["JwtSettings:Key"]!)),
@@ -51,7 +58,7 @@ namespace GearShop
                 };
             });
 
-            builder.Services.AddDetection(); //Определение типа устройства.
+			builder.Services.AddDetection(); //Определение типа устройства.
 
 			builder.Services.AddSingleton<IEMailNotifier, EMailNotifier>(x=> 
 	            new EMailNotifier(config["EmailNotifier:senderEmail"],
@@ -65,10 +72,10 @@ namespace GearShop
 		            provider.GetService<IEMailNotifier>(), provider.GetService<ILogger<Notifier>>()));
 
             builder.Services.AddSingleton<IFileStorage>(x=>new FileStorage("Upload\\Files"));
-            builder.Services.AddScoped<IIdentityService>(x => 
-                new IdentityService(config["JwtSettings:Key"]!, x.GetRequiredService<IGearShopRepository>()));
-            
-            builder.Services.AddDistributedMemoryCache();
+			builder.Services.AddSingleton<IGoogleAuth, GoogleAuth> ();
+			
+
+			builder.Services.AddDistributedMemoryCache();
 			builder.Services.AddHttpContextAccessor();
 
 			builder.Services.AddSession(options =>
@@ -77,21 +84,26 @@ namespace GearShop
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
-            
-            builder.Services.AddDbContext<GearShopDbContext>(options =>
-                options.UseSqlServer(config["MsSqlConnectionStrings:Default"]));
 
-            builder.Services.AddScoped<IDataSynchronizer, DataSynchronizer>();
+			builder.Services.AddScoped<IDataSynchronizer, DataSynchronizer>();
 
 			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-            builder.Services.AddScoped<IGearShopRepository, GearShopRepository>();
 
             // Add services to the container.
            builder.Services.AddControllersWithViews()
                .AddRazorRuntimeCompilation(); //Для верстки страниц без перезагрузки сервиса.
 
+            //Сжатие js текста.
+                  builder.Services.AddWebMarkupMin(options =>
+                  {
+                      options.AllowMinificationInDevelopmentEnvironment = true;
+                      options.AllowCompressionInDevelopmentEnvironment = true;
 
-           Log.Logger = new LoggerConfiguration()
+                  }).AddHtmlMinification()
+                  .AddHttpCompression();
+
+
+            Log.Logger = new LoggerConfiguration()
 	           .MinimumLevel.Information()
 	           .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) //Выводить только варнинги Microsoft.
 	           .WriteTo.File(
@@ -109,7 +121,8 @@ namespace GearShop
 			});
 
 			var app = builder.Build();
-			
+
+			app.UseWebMarkupMin();
 
 			// Configure the HTTP request pipeline.
 			if (!app.Environment.IsDevelopment())
@@ -122,7 +135,8 @@ namespace GearShop
 			app.UseSerilogRequestLogging();
 
 			app.UseHttpsRedirection();
-            app.UseStaticFiles();
+	
+			app.UseStaticFiles();
 
             app.UseCookiePolicy();
 
@@ -150,5 +164,10 @@ namespace GearShop
 
             app.Run();
         }
-    }
+        private static Task OnFailure(RemoteFailureContext arg)
+        {
+	        Log.Error(arg.Failure.Message);
+	        return Task.CompletedTask;
+        }
+	}
 }

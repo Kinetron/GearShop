@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -11,8 +12,10 @@ using DataParser;
 using DataParser.Models;
 using DataParser.Models.Products;
 using DataParser.Services;
+using Newtonsoft.Json;
 using PriceUploader.Contracts;
 using RemoteControlApi;
+using RemoteControlApi.Models;
 using static System.Net.WebRequestMethods;
 
 namespace PriceUploader.Commands
@@ -47,28 +50,12 @@ namespace PriceUploader.Commands
                 EventEndWork?.Invoke();
             }
 
-			//CsvParser parser = new CsvParser();
-			//List<Product> products = parser.ParseFile(files[0], '|');
-			//if (products == null)
-			//{
-			//    _sendErrorToUser($"{parser.LastError}{Environment.NewLine}");
-			//    return;
-			//}
-
-			//Разбивка по типам товара. Не реализована.
-			//_sendTextToUser($"Файл считан. Разбор данных.");
-			//ProductTypesParser productTypesParser = new ProductTypesParser();
-			//productTypesParser.ParseProducts(products);
-			//var allProducts = productTypesParser.AllProducts;
-
 			_sendTextToUser($"Загрузка файла на сервер...{Environment.NewLine}");
             RemoteControlApi.WebClient fileUploader = new RemoteControlApi.WebClient();
 
-            //string url = "http://autolugansk.ru/LoadProductList/UploadCsv";
-			//string url = "https://localhost:44342/LoadProductList/UploadCsv";
-			//HttpResponseMessage answer = fileUploader.Upload(url, 
-			//  files[0], "UploaderMan898qw", "IpYNrGy5M2TP4eewVdDcII8lOVrHVn2g3c7R5HXHnmPz").Result;
+            Task.Run(ShowOperationProgress);
 
+			//Переделать на запуск фонового процесса!
 			HttpResponseMessage answer = fileUploader.Upload(UserData.UploadCsvUrl, files[0], UserData.UserName,
 				UserData.Password).Result;
 
@@ -78,10 +65,43 @@ namespace PriceUploader.Commands
 				EventEndWork?.Invoke();
                 return;
 			}
-
-            _sendTextToUser($"Успешно.{Environment.NewLine}");
-            EventEndWork?.Invoke();
         }
+
+		/// <summary>
+		/// Получает сведения о прогрессе выполнения операции.
+		/// </summary>
+		private async Task<bool> ShowOperationProgress()
+		{
+			await Task.Delay(2000);
+
+			RemoteControlApi.WebClient client = new RemoteControlApi.WebClient();
+
+			while (true)
+			{
+				await Task.Delay(1000);
+				HttpResponseMessage answer = await client.GetByParamAsync(UserData.OperationStatus, "1", "operationId");
+
+				if (answer.StatusCode != HttpStatusCode.OK) continue;
+				var content = await answer.Content.ReadAsStringAsync();
+				var data = JsonConvert.DeserializeObject<PriceSynchronizeStatus>(content);
+				
+                _printProgress(data.Current, data.Total);
+
+                if (data.Current == data.Total)
+                {
+					TimeSpan interval = data.EndOperation.Value - data.BeginOperation.Value;
+                    string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+	                    interval.Hours, interval.Minutes, interval.Seconds, interval.Milliseconds / 10);
+
+                    _sendTextToUser($"{Environment.NewLine}Время обработки {elapsedTime}.{Environment.NewLine}");
+                    break;
+				}
+			}
+
+			_sendTextToUser($"Успешно.{Environment.NewLine}");
+			EventEndWork?.Invoke();
+			return true;
+		}
 
         public void ReadUserInput(string text)
         {

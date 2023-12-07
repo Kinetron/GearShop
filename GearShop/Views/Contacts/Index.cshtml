@@ -1,0 +1,41 @@
+﻿@using GearShop.Models.ViewModels
+@model PageViewModel
+
+<style>
+	.contact-image {
+		height: 200px;
+		width: 760px;
+	}
+
+	.main-panel {
+		width: 800px;
+	}
+</style>
+
+@*Добавление кнопок редактирования в режиме администрирования.*@
+<div editable-block="true" content-element-name="pageContent" page-id="@Model.Id"></div>
+<div id="mainPаnel" class="main-panel">
+	<p>
+		<img src="images/main1.jpg" class="contact-image" />
+	</p>
+	
+	<div id="pageContent">
+		@Html.Raw(Model.PageContent)
+	</div>
+</div>
+
+<script type="text/javascript">
+	$('#default').puipanel();
+	$('#galleryControl').puigalleria({
+		panelWidth: 800,
+		panelHeight: 200
+	});
+
+	$('#mainPаnel').puipanel();
+
+	$('#toBuyBtn').puibutton({
+		click: function (event) {
+			window.location.href = '@Url.Action("Index", "ProductList")';
+		}
+	});
+</script>

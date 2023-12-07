@@ -1,4 +1,5 @@
-﻿@*Страница выбора продуктов. Витрина магазина. Список продуктов.*@
+﻿@using GearShop.Enums
+@*Страница выбора продуктов. Витрина магазина. Список продуктов.*@
 @{
 	Layout = "~/Views/Shared/_Layout.cshtml";
 	bool isMobile = (bool)ViewData["IsMobile"];
@@ -67,7 +68,7 @@
 	}
 
 	.select-type-product {
-		font-weight: bold!important;
+		font-weight: bold!important;color: mediumseagreen;
 	}
 </style>
 
@@ -195,12 +196,18 @@ const ShowcaseScript = {
 		});
 
 		$("#searchInput").on('keyup', function (e) {
+
 			if (e.key === 'Enter' || e.keyCode === 13) {
 				ShowcaseScript.searchByText($('#searchInput').val());
+			}
+
+			if ((e.key === 'Backspace' || e.keyCode === 8) && $('#searchInput').val().length === 0) {
+				ShowcaseScript.searchByText('');
 			}
 		});
 
 		$('#productsPaginator').puipaginator({
+			rows: "9", @*Количество товара на страницу*@
 			paginate: function(event, state) {
 				ShowcaseScript.setCurrentPage(state.page + 1);
 				$('#tbProductList').puidatagrid('reload');
@@ -241,12 +248,8 @@ const ShowcaseScript = {
 			context: this,
 			success: function (response) {
 				$('#recordCountInfo').text(`Найдено ${response.totalRecords} товаров`);
-				$('#productsPaginator').puipaginator({
-					totalRecords: response.totalRecords,
-					rows: response.rows 
-				});
-
-				$('#productsPaginator').puipaginator('setState', { totalRecords: response.totalRecords, page:0 });
+				$('#productsPaginator').puipaginator('setTotalRecords', response.totalRecords);
+				$('#productsPaginator').puipaginator('setPage',  0, false);
 			}
 		});
 	},
@@ -267,7 +270,9 @@ const ShowcaseScript = {
 	productTypeChanged(typeId) {
 		$(`#productType${this.productTypeId}`).removeClass("select-type-product");
 		ShowcaseScript.productTypeId = typeId;
-		
+		$('#searchInput').val('');
+		ShowcaseScript.searchText = '';
+
 		$(`#productType${typeId}`).addClass("select-type-product");
 		this.updateProductList();
 	},
@@ -293,13 +298,22 @@ const ShowcaseScript = {
 	},
 
 	createAvailableHtmlBlock(amount) {
-		
-		if (amount == 0) {
-			return '<div style="color:red;">Нет</div>';
-		} else if (amount < 5) {
-			return '<div style="color:hotpink;">Мало</div>';
-		} else {
-			return '<div style="color:green;">Достаточно</div>';
+
+		switch (amount) {
+			case @((int)ProductThresholdEnum.Empty):
+				return '<div style="color:red;">Нет</div>';
+				
+			case @((int)ProductThresholdEnum.NotEnough):
+				return '<div style="color:hotpink;">Мало</div>';
+
+			case @((int)ProductThresholdEnum.Enough):
+				return '<div style="color:green;">Достаточно</div>';
+
+			case @((int)ProductThresholdEnum.Lot):
+				return '<div style="color:mediumseagreen;">Много</div>';
+
+			default:
+				return '<div style="color:mediumseagreen;">Много</div>';
 		}
 	},
 
@@ -312,7 +326,7 @@ const ShowcaseScript = {
 							<div>${product.name}</div>									
 						  </div>
 						  <div id="buy-block">
-								  <div class="price"> ${product.cost}&nbsp;₽</div>
+								  <div class="price"> ${product.cost}&nbsp;р</div>
 										${this.createAvailableHtmlBlock(product.amount)}
 								<div>
 									<button id="buy${product.id}" type="button" onClick="ShowcaseScript.buy(${product.id}, '${product.name}', '${product.cost}', '${product.imageName}');"

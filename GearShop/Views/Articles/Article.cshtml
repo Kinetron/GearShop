@@ -1,0 +1,22 @@
+﻿@model GearShop.Models.ViewModels.ArticleViewModel
+
+<div class="ui-grid ui-grid-responsive">
+	<div class="ui-grid-row" >
+		<div class="ui-grid-col-12">
+			<header>
+				<div>
+					<h4>
+						@Model.Title
+					</h4>
+				</div>
+			</header>
+			<div>
+				<span>
+					<font style="vertical-align: inherit;">
+						@Html.Raw(Model.Content)
+					</font>
+				</span>
+			</div>
+		</div>
+	</div>
+</div>

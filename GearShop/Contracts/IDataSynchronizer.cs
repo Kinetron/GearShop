@@ -7,12 +7,12 @@ public interface IDataSynchronizer
     /// </summary>
 	string LastError { get; }
 
-    /// <summary>
-    /// Синхронизирует данные в БД с файлом CSV.
-    /// </summary>
-    /// <param name="fileName"></param>
-    /// <returns></returns>
-    bool CsvSynchronize(string fileName);
+	/// <summary>
+	/// Синхронизирует данные в БД с файлом CSV.
+	/// </summary>
+	/// <param name="fileName"></param>
+	/// <returns></returns>
+	Task<bool> CsvSynchronize(string fileName);
 
     /// <summary>
     /// Синхронизация картинок продуктов.
@@ -20,4 +20,11 @@ public interface IDataSynchronizer
     /// <param name="fileName"></param>
     /// <returns></returns>
     bool ProductImagesSynchronize(string fileName, string storagePath);
+
+	/// <summary>
+	/// Возвращает информацию о текущей выполняемой операции(например синхронизация данных).
+	/// </summary>
+	/// <param name="operationId"></param>
+	/// <returns></returns>
+	Task<string> GetOperationStatus(int operationId);
 }

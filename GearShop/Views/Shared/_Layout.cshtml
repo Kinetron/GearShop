@@ -1,23 +1,37 @@
 ﻿@addTagHelper *, Wangkanai.Detection
+<style>
+	.hide-block {
+		display: none;
+	}
+
+	.user-name-block {
+		padding-right: 10px;
+	}
+</style>
+
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Магазин запчастей</title>
 
+	<meta name="google-signin-client_id" content="989279840088-b2v4s1cgc0jf8ijurkudlt9uh5p6tm7l.apps.googleusercontent.com">
+    <title>@ViewData["Title"] - Магазин запчастей</title>
+    <script src="https://vk.com/js/api/openapi.js?169" type="text/javascript"></script>
 	<link rel="stylesheet" type="text/css" href="~/font-awesome-4.7.0/css/font-awesome.css">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" type="text/css" href="~/primeui/themes/aristo/theme.css">
     <link href="~/primeui/primeui-all.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="~/ckeditor/content-styles.css" type="text/css">
+	<link rel="stylesheet" href="~/ckeditor/imageresize.css" type="text/css">
+    
 </head>
 <body>
 <header>
 	<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
 		<div class="container-fluid">
-			<a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Авто запчасти</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
 			        aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
@@ -31,16 +45,37 @@
 						<a class="nav-link text-dark" asp-area="" asp-controller="ProductList" asp-action="Index">Магазин</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link text-dark" asp-controller="Basket" asp-action="Index">Корзина</a>
+						<a class="nav-link text-dark" asp-controller="Articles" asp-action="Index">Статьи</a>
 					</li>
 					<li class="nav-item">
+						<a class="nav-link text-dark" asp-controller="Contacts" asp-action="Index">Контакты</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link text-dark" asp-controller="Basket" asp-action="Index">Корзина</a>
+					</li>
+					<li class="hide-block nav-item" id="adminLink">
+						<a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Администрирование</a>
+					</li>
+					<li class="hide-block nav-item" id="logInLink">
 						<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Authentication">Войти</a>
+					</li>
+					<li class="hide-block nav-item" id="logOutLink">
+						<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Logout">Выйти</a>
 					</li>
 				</ul>
 			</div>
+			<div id="userName" class="user-name-block"></div>
+			<img id="userIcon" src="/images/guest.png" width="30" height="30"
+			     alt="User icon" />
 		</div>
 	</nav>
 </header>
+
+<div id="waitIndicator" class="hide-block">
+	<p>
+		<img src="/images/spinner.gif" width="100%" />
+	</p>
+</div>
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -52,11 +87,13 @@
 		<div id="messageControl"></div>
 		@RenderBody()
 	</main>
-    </div>
+</div>
 
 <footer class="border-top footer text-muted">
 	<div class="container">
-		&copy; 2023 - Магазин запчастей
+		@*Добавление кнопок редактирования в режиме администрирования.*@
+		<div editable-block="true" content-element-name="footerContainer"></div>
+		<div id="footerContainer"></div>
 	</div>
 </footer>
 	@await RenderSectionAsync("Scripts", required: false)
@@ -65,13 +102,502 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
+	MainMenuScript.init();
 	CommonScript.Init();
+
+		CommonScript.silentAjax('@Url.Action("Footer", "Home")',
+		'POST',
+		null,
+		(response) => {
+			const data = JSON.parse(response);
+
+			$("#footerContainer").html(data.text);
+			$('[content-element-name="footerContainer"]').attr('page-id', data.id);
+		});
 });
+
+const MainMenuScript = {
+	  init() {
+		  $.ajax({
+			  url: '@Url.Action("GetAccountInfo", "Login")',
+			  type: "GET",
+				success: function (response) {
+
+					if (response.isAuth == false) {
+
+						$('#userName').text('Гость');
+						$('#adminLink').hide();
+						$('#logInLink').show();
+						$('#logOutLink').hide();
+					} else {
+
+						$('#userName').text(response.name);
+						$('#logInLink').hide();
+						$('#logOutLink').show();
+						
+						if (response.isAdmin == true) {
+							@*Для медленных соединений не грузим лишние файлы, нужные только админу.*@
+							CommonScript.loadJsFile('ckeditor/uploadAdapter.js', () => { });
+							CommonScript.loadJsFile('ckeditor/ckeditor.js', () => {
+
+								$('#adminLink').show();
+								PageEditorScript.addEditBlocksToPages(); @*Добавляет функционал редактирования страницы.*@
+							});
+						}
+
+						if (response.pictureUrl !== undefined && response.pictureUrl.length !== 0) {
+							$('#userIcon').attr('src', response.pictureUrl);
+						}
+					}
+
+					PageEditorScript.drawArticles(response.isAdmin);
+				}
+		  });
+	  }
+}
+
+@*Обвертка для реализации(uploadAdapter.js) плагина загрузки картинок для CKEditor. Так как стандартного нет. Есть платный.*@
+function uploadAdapterPlugin(editor) {
+	editor.plugins.get( 'FileRepository' ).createUploadAdapter = ( loader ) => {
+		return new GearUploadAdapter(loader, '@Url.Action("UploadArticleImage", "UploadData")');
+	};
+}
+
+@*Редактор страниц и статей.*@
+const PageEditorScript = {
+	_editor: null,
+
+	@*Создает элемент ckeditor*@
+	_createEditorControl(body, disabledPlugins) {
+		ClassicEditor
+			.create(document.querySelector('#editorControl'),
+				{
+					removePlugins: disabledPlugins,
+					extraPlugins: [uploadAdapterPlugin]
+				})
+			.then(editor => {
+				window.editor = editor;
+				PageEditorScript._editor = editor;
+
+				if (body == null) return; @*Нет текста для заполенния эдитора*@
+
+				editor.setData(body);
+			})
+			.catch(err => {
+				console.error(err.stack);
+			});
+	},
+
+	@*Очищает ресурсы.*@
+	_destroyEditorControl() {
+		PageEditorScript._editor.destroy().catch(error => {
+			console.log( error );
+		});
+	},
+
+	@*Редактирование страницы*@
+	editPage(containerName) {
+		let content = $(`#${containerName}`).html();
+		this._createEditorControl(content, ['Title']); @*Для страницы нужно отключать этот плагин. Иначе эдитор будет требовать заголовок.*@
+	},
+	
+	@*Добавление статьи на страницу*@
+	addNewArticle() {
+		PageEditorScript._createEditorControl(null, []);
+	},
+
+	@*Возвращает описание статьи(описание и картинка)*@
+	_articleInfo(body) {
+		const data = {
+			imageSrc: '',
+			description: '' 
+		};
+		
+		if (body.length !== 0) {
+			data.imageSrc = $(body).find('img:first').attr('src');
+			data.description = $(body).filter("p:first").text(); @*Первый параграф на превью*@
+		}
+
+		return data;
+	},
+
+	@*Сохранение новой статьи*@
+	saveNewArticle(parentPageName, success) {
+
+		const body  = PageEditorScript._editor.plugins.get('Title').getBody();
+		const info = this._articleInfo(body);
+
+		const dto = {
+			title: PageEditorScript._editor.plugins.get('Title').getTitle(),
+			titleImage: info.imageSrc,
+			description: info.description,
+			content: body,
+			parentPageName: parentPageName
+		};
+
+		CommonScript.ajax('@Url.Action("AddArticle", "PageEditor")',
+			'POST',
+			{ data: JSON.stringify(dto) },
+			() => {
+				PageEditorScript._destroyEditorControl();
+				success();
+			});
+	},
+
+	@*Сохранение новой статьи*@
+	addArticle(parentId, success) {
+
+		const body  = PageEditorScript._editor.plugins.get('Title').getBody();
+		const info = this._articleInfo(body);
+
+		const dto = {
+			title: PageEditorScript._editor.plugins.get('Title').getTitle(),
+			titleImage: info.imageSrc,
+			description: info.description,
+			content: body,
+			parentId: parentId
+		};
+
+		CommonScript.ajax('@Url.Action("AddArticle", "PageEditor")',
+			'POST',
+			{ data: JSON.stringify(dto) },
+			() => {
+				PageEditorScript._destroyEditorControl();
+				success();
+			});
+	},
+
+	@*Сохранение существующей статьи*@
+	updateArticle(id, success) {
+		
+		const body  = PageEditorScript._editor.plugins.get('Title').getBody();
+		const info = this._articleInfo(body);
+
+		const dto = {
+			id: id,
+			title: PageEditorScript._editor.plugins.get('Title').getTitle(),
+			titleImage: info.imageSrc,
+			description: info.description,
+			content: body
+		};
+
+		CommonScript.ajax('@Url.Action("UpdateArticle", "PageEditor")',
+			'POST',
+			{ data: JSON.stringify(dto) },
+			() => {
+				PageEditorScript._destroyEditorControl();
+				success();
+			});
+	},
+
+	editArticle(id) {
+		CommonScript.ajax('@Url.Action("GetArticle", "PageEditor")', 'GET', { id: id }, (response) => {
+			const content = JSON.parse(response);
+			PageEditorScript._createEditorControl(content.title + content.content, []);
+		});
+	},
+
+	@*Удалить статью*@
+	deleteArticle(id, success) {
+		CommonScript.ajax('@Url.Action("DeleteArticle", "PageEditor")',
+			'POST', { id: id }, success);
+	},
+
+	@*Сохраняет измененный текст страницы*@
+	updatePageContentDeleteThis(pageName, success) {
+		const text = PageEditorScript._editor.getData();
+
+		CommonScript.ajax('@Url.Action("UpdatePageContent", "PageEditor")', 'POST',
+			{ text: text, pageName: pageName }, () => {
+				PageEditorScript._destroyEditorControl();
+				success();
+			});
+	},
+
+	@*Сохраняет измененный текст страницы.*@
+	updatePageContent(id, success) {
+		const text = PageEditorScript._editor.getData();
+
+		CommonScript.ajax('@Url.Action("UpdatePageContent", "PageEditor")', 'POST',
+			{ id: id, text: text}, () => {
+				PageEditorScript._destroyEditorControl();
+				success();
+			});
+	},
+	
+	_editPanelHtml(blockId) {
+		return `<div id="editorBlock${blockId}">
+					<button id="editPageBtn${blockId}" btn-type="page-editor-btn" class="hide-block" type="button">Редактировать</button>
+					<button id="savePageBtn${blockId}" class="hide-block" type="button">Сохранить</button>
+				</div>`;
+	},
+
+	_initEditButtons(blockId, containerName) {
+		const editBtn = $(`#editPageBtn${blockId}`);
+		const saveBtn = $(`#savePageBtn${blockId}`);
+
+		editBtn.show();
+		saveBtn.hide();
+		editBtn.puibutton({
+			click: function(event) {
+				editBtn.hide();
+				saveBtn.show();
+				$('[btn-type="page-editor-btn"]').hide(); @*Скрываю другие кнопки редактирования, так как используем один компонент.*@
+
+				const editBlock = $(`#editorBlock${blockId}`).detach();
+				$(`#${containerName}`).before(editBlock);
+				
+				PageEditorScript.editPage(containerName);
+			}
+		});
+		
+		saveBtn.puibutton({
+			click: function() {
+
+				PageEditorScript.updatePageContent(pageName, () => {
+					saveBtn.hide();
+					editBtn.show();
+					location.reload(true);
+				});
+			}
+		});
+	},
+
+	@*После каждого блока страницы или статьи на странице добавляет кнопки редактирования.*@
+	_blockEditButtonsHtml(containerName, id, isPage) {
+		let html = `<div>
+							<button btn-type="editor-btn" type="button" onClick="PageEditorScript.editBlock('${containerName}',${id});"
+					class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+					<i class="fa fa-fw fa-edit"></i></button>`;
+		if (!isPage) {
+			html += `<button btn-type="editor-btn" type="button" onClick="PageEditorScript.deleteBlock(${id});"
+						  class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+							<i class="fa fa-fw fa-remove"></i></button>
+					 </div>`;
+		}
+
+		return html;
+	},
+
+	@*Добавляет кнопку «Сохранить» после перехода в режим редактирования.*@
+	_addSaveBtn(containerName, id, parentId, isPage) {
+		const btnId = 'saveBtn';
+
+		let parentIdAttr = '';
+		if (parentId != null) {
+			parentIdAttr = `parentId="${parentId}"`;
+		}
+
+		let isPageAttr = '';
+		if (isPage) {
+			isPageAttr = 'is-page="true"';
+		}
+
+		const saveBtn = `<button id="${btnId}" class="hide-block" type="button" editingId="${id}" ${parentIdAttr} ${isPageAttr}"> Сохранить </button>`;
+
+		if (containerName.length == 0) {
+			$(`#article${id}`).before(saveBtn);
+		} else {
+			$(`#${containerName}`).before(saveBtn);
+		}
+		
+		$('#saveBtn').puibutton({
+			icon: 'fa-save',
+			click: function (event) {
+				const id = $('#saveBtn').attr('editingId');
+				const isPage = $('#saveBtn').attr('is-page'); @*Редктируем страницу, а не статью.*@
+
+				if (isPage !== undefined) {
+
+					PageEditorScript.updatePageContent(id, () => {
+						location.reload(true);
+					});
+					return;
+				}
+
+				if (id === '-1' ) {
+					const parentId = $('#saveBtn').attr('parentId');
+					PageEditorScript.addArticle(parentId,
+						() => {
+							location.reload(true);
+						});
+				} else 
+				{
+					PageEditorScript.updateArticle(id,
+						() => {
+							location.reload(true);
+						});
+				}
+			}
+		});
+
+		return btnId;
+	},
+
+	editBlock(containerName, id) {
+		const isPage = containerName.length !== 0; 
+
+		const bntName = this._addSaveBtn(containerName, id, null, isPage);
+		const editor = $("#editorControl").detach();
+		$(`#${bntName}`).after(editor);
+
+		@*Редактирование главы*@
+		if (containerName.length == 0) {
+			
+			const editBlock = $("#editorControl").detach();
+
+			$(`#article${id}`).before(editBlock);
+			PageEditorScript.editArticle(id);
+			$(`#article${id}`).hide();
+			$('#addArticleBtn').hide();
+		}
+		else
+		{
+			$('html, body').animate({
+					scrollTop: $("#editorControl").offset().top
+				},
+				100);
+			PageEditorScript.editPage(containerName);
+			$(`#${containerName}`).hide();
+		}
+
+		$('[btn-type="editor-btn"]').hide(); @*Скрываю все кнопки редактирования.*@
+	},
+
+	addEditBlocksToPages() {
+		$('body').append('<div id="editorControl"></div>');
+
+		$("[editable-block]").each(function (i, item) {
+			const block = $(item);
+
+			const editable = block.attr('editable-block');
+			if (editable === undefined || editable !== 'true') return;
+			const contentDiv = $(`#${block.attr('content-element-name')}`);
+			const pageId = block.attr('page-id');
+
+			contentDiv.after(PageEditorScript._blockEditButtonsHtml(block.attr('content-element-name'), pageId, true));
+		});
+	},
+
+	deleteBlock(id) {
+		PageEditorScript.deleteArticle(id, () => {
+			location.reload(true);
+		});
+	},
+
+	@*Добавить статью.*@
+	_addArticleBtn(block, parentId) {
+		const addBtn = '<button id="addArticleBtn" class="hide-block" type="button">Добавить</button>';
+		block.before(addBtn);
+		$('#addArticleBtn').puibutton({
+			icon: 'fa-hacker-news',
+			click: function (event) {
+				$('#addArticleBtn').hide();
+
+				const bntName = PageEditorScript._addSaveBtn('addArticleBtn', -1, parentId, false);
+				const editor = $("#editorControl").detach();
+				$(`#${bntName}`).after(editor);
+
+				PageEditorScript.addNewArticle();
+			}
+		});
+	},
+
+	_fillArticleBlock(item, adminMode) {
+		let editBtn = '';  
+
+		if (adminMode) {
+			editBtn = this._blockEditButtonsHtml('', item.id, false);
+		}
+
+		@*Применение отдельного шаблона, при больших объемах замедляет страницу.*@
+		return `<div class="ui-grid-row" id="article${item.id}">
+				 <div class="ui-grid-col-2">
+					 <figure>
+						<img src="${item.titleImage}" width="100" height="100">
+					 </figure>
+				 </div>
+				 <div class="ui-grid-col-10">
+					 <header>
+					<div>
+						<h4>
+							<a href="@Url.Action("Article", "Articles")?id=${item.id}">
+								<font style="vertical-align: inherit;">
+												${item.title}
+								</font>
+							</a>
+						</h4>
+					</div>
+					</header>
+				<div>
+					<span>
+							<font style="vertical-align: inherit;">${item.description}
+						</font>
+					</span>
+				</div>
+					${editBtn}
+				 </div>
+				</div>`;
+	},
+
+	@*Создает список статей.*@
+	_createArticleList(data, pageId, adminMode) {
+		const list = JSON.parse(data);
+
+		let text = '';
+		list.forEach((item) => {
+			text += this._fillArticleBlock(item, adminMode);
+		});
+
+		$(`#articles${pageId}`).html(text);
+	},
+
+	@*Отображает статьи на странице.*@
+	drawArticles(adminMode) {
+		if(adminMode) {
+			$('body').append('<div id="editorControl"></div>');
+		}
+		
+		$('[articles-block="true"]').each(function(i, item) {
+			const block = $(item);
+			const pageId = block.attr('page-id');
+
+			if (adminMode) {
+				PageEditorScript._addArticleBtn(block, pageId); @*Кнопка добавить статью*@
+			}
+
+			const articlesBlock = `<div class="ui-grid ui-grid-responsive" id="articles${pageId}">
+								  </div>`;
+
+			CommonScript.silentAjax('@Url.Action("GetArticles", "Articles")',
+				'GET',
+				{ pageId: pageId},
+				(response) => {
+					block.after(articlesBlock);
+					PageEditorScript._createArticleList(response, pageId, adminMode);
+				});
+
+		});
+	}
+}
 
 @*Общий набор функций для всех страниц.*@
 const CommonScript = {
 		Init() {
 			$('#messageControl').puigrowl(); @*Всплывающее сообщение*@
+			$('#waitIndicator').puidialog({ @*Окно со спинером*@
+				showEffect: 'fade',
+				hideEffect: 'fade',
+				minimizable: false,
+				maximizable: false,
+				closable: false,
+				resizable: false,
+				responsive: false,
+				width: 140,
+				height: 140,
+				modal: true,
+				title: 'Обработка...'
+			});
 		},
 
 		@*Отображает сообщение.*@
@@ -214,6 +740,58 @@ const CommonScript = {
 			if (Number.isNaN(dig)) return false;
 
 		return true;
+	},
+
+	@*Загружает js файл*@
+	loadJsFile(file, onLoad) {
+		const script = document.createElement("script");
+		script.type = "application/javascript";
+		script.onload = onLoad;
+		script.src = file;
+		document.body.appendChild(script);
+	},
+	
+	@*Показывает окно со спинером.*@
+	showLoadIndicator() {
+		$('#waitIndicator').puidialog('show');
+	},
+
+	@*Скрывает окно со спинером.*@
+	hideLoadIndicator() {
+		$('#waitIndicator').puidialog('hide');
+	},
+
+	ajax(url, method, data, success) {
+		$.ajax({
+			url: url,
+			method: method,
+			data: data,
+			beforeSend: function () {
+				CommonScript.showLoadIndicator();
+			},
+			success: function (response) {
+				CommonScript.hideLoadIndicator();
+				CommonScript.showMessage('info', 'Успешно', '');
+				success(response);
+			},
+			error: function (error) {
+				console.log(error);
+				CommonScript.hideLoadIndicator();
+				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
+			}
+		});
+	},
+
+	@*Тихий - без вывода сообщений*@
+	silentAjax(url, method, data, success) {
+		$.ajax({
+			url: url,
+			method: method,
+			data: data,
+			success: function (response) {
+				success(response);
+			}
+		});
 	}
 }
 </script>

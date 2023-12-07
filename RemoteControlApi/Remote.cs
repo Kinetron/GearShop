@@ -27,16 +27,6 @@ namespace RemoteControlApi
 		private readonly Action<int, int> _printProgress;
 		public string LastError { get; private set; }
 
-		private static string _hostName = "https://localhost:44342/";
-		//private static string _hostName = "http://autolugansk.ru/";
-
-		public static string UserName = "UploaderMan898qw";
-		public static string Password = "IpYNrGy5M2TP4eewVdDcII8lOVrHVn2g3c7R5HXHnmPz";
-		public static string SynchronizeImageArchive = $"{_hostName}UploadData/SynchronizeImageArchive";
-		public static string UploadArchivePart = $"{_hostName}UploadData/UploadArchivePart";
-
-		public static string UploadCsvUrl = $"{_hostName}UploadData/UploadCsv";
-
 		private Excel1сShopParser2022Format _parser; 
 
 		public Remote(Action<string> sendTextToUser, Action<string> sendErrorToUser, Action<int, int> printProgress)
@@ -49,8 +39,8 @@ namespace RemoteControlApi
 		public async Task<bool> Authorization()
 		{
 			WebClient client = new WebClient();
-			HttpResponseMessage answer = await client.GetAsync($"{_hostName}Login/Authentication", UserName,
-				Password);
+			HttpResponseMessage answer = await client.GetAsync($"{UserData.Host}Login/Authentication", UserData.UserName,
+				UserData.Password);
 
 			if (answer.StatusCode != HttpStatusCode.OK)
 			{
@@ -79,8 +69,8 @@ namespace RemoteControlApi
 		public async Task<List<KeyPair>> GetProductImagesInfo()
 		{
 			WebClient client = new WebClient();
-			HttpResponseMessage answer = await client.GetAsync($"{_hostName}UploadData/GetProductImagesInfo", UserName,
-				   Password);
+			HttpResponseMessage answer = await client.GetAsync($"{UserData.Host}UploadData/GetProductImagesInfo", UserData.UserName,
+				   UserData.Password);
 
 			if (answer.StatusCode != HttpStatusCode.OK)
 			{

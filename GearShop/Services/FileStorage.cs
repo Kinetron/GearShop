@@ -1,4 +1,5 @@
 ﻿using GearShop.Contracts;
+using System.IO;
 
 namespace GearShop.Services
 {
@@ -6,7 +7,12 @@ namespace GearShop.Services
     /// Локальное хранилище данных.
     /// </summary>
     public class FileStorage : IFileStorage
-	{
+    {
+		/// <summary>
+		/// Каталог где храниться картинки и прикрепленные файлы статей. 
+		/// </summary>
+		private const string ArticleFilesDir = "article-files";
+		
 		/// <summary>
 		/// Сообщение об ошибке.
 		/// </summary>
@@ -20,8 +26,23 @@ namespace GearShop.Services
 		public FileStorage(string storagePath)
 		{
 			StoragePath = storagePath;
-		}
 
+			//Создаем каталог хранилища, если не существует.
+			var filepath = Path.Combine(Directory.GetCurrentDirectory(), StoragePath);
+
+			if (!Directory.Exists(filepath))
+			{
+				Directory.CreateDirectory(filepath);
+			}
+
+			string articlesDir = Path.Combine(filepath, ArticleFilesDir);
+			//Каталог хранения данных статей.
+			if (!Directory.Exists(articlesDir))
+			{
+				Directory.CreateDirectory(articlesDir);
+			}
+		}
+		
 		/// <summary>
 		/// Сохраняет файл.
 		/// </summary>
@@ -31,18 +52,8 @@ namespace GearShop.Services
 		{
 			try
 			{
-				var filepath = Path.Combine(Directory.GetCurrentDirectory(), StoragePath);
-
-				if (!Directory.Exists(filepath))
-				{
-					Directory.CreateDirectory(filepath);
-				}
-
-				var exactpath = Path.Combine(Directory.GetCurrentDirectory(), StoragePath, file.FileName);
-				using (var stream = new FileStream(exactpath, FileMode.Create))
-				{
-					await file.CopyToAsync(stream);
-				}
+				string path = Path.Combine(Directory.GetCurrentDirectory(), StoragePath, file.FileName);
+				await SaveFile(file, path);
 			}
 			catch (Exception ex)
 			{
@@ -51,6 +62,43 @@ namespace GearShop.Services
 			}
 
 			return true;
+		}
+
+		private async Task SaveFile(IFormFile file, string path)
+		{
+			using (var stream = new FileStream(path, FileMode.Create))
+			{
+				await file.CopyToAsync(stream);
+			}
+		}
+
+		/// <summary>
+		/// Сохраняет файлы статей.
+		/// </summary>
+		/// <param name="file"></param>
+		/// <returns></returns>
+		public async Task<string> SaveArticleFile(IFormFile file)
+		{
+			//Файлы группируются по дням.
+			string path = Path.Combine("wwwroot", ArticleFilesDir, DateTime.Now.ToString("dd-MM-yyyy"));
+
+			try
+			{
+				if (!Directory.Exists(path))
+				{
+					Directory.CreateDirectory(path);
+				}
+
+				string filepath = Path.Combine(path, file.FileName);
+				await SaveFile(file, filepath);
+				
+				return filepath.Replace("wwwroot", "");
+			}
+			catch (Exception ex)
+			{
+				LastError = ex.Message + " " + ex.StackTrace;
+				return null;
+			}
 		}
 	}
 }

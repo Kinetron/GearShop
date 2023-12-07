@@ -1,5 +1,7 @@
 ﻿using GearShop.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting.Internal;
 using Newtonsoft.Json;
 
 namespace GearShop.Controllers
@@ -13,14 +15,16 @@ namespace GearShop.Controllers
 		private readonly IDataSynchronizer _dataSynchronizer;
 		private readonly IIdentityService _identityService;
 		private readonly IGearShopRepository _gearShopRepository;
+		private readonly IServiceScopeFactory _scopeFactory;
 
 		public UploadDataController(IFileStorage fileStorage, IDataSynchronizer dataSynchronizer, 
-			IIdentityService identityService, IGearShopRepository gearShopRepository)
+			IIdentityService identityService, IGearShopRepository gearShopRepository, IServiceScopeFactory scopeFactory)
 		{
 			_fileStorage = fileStorage;
 			_dataSynchronizer = dataSynchronizer;
 			_identityService = identityService;
 			_gearShopRepository = gearShopRepository;
+			_scopeFactory = scopeFactory;
 		}
 
 		/// <summary>
@@ -43,12 +47,34 @@ namespace GearShop.Controllers
 				return StatusCode(507, _fileStorage.LastError);
 			}
 
-			if (!_dataSynchronizer.CsvSynchronize(Path.Combine(_fileStorage.StoragePath, file.FileName)))
+			//Task.Run(() =>
+			//{
+			//	using (var scope = _scopeFactory.CreateScope())
+			//	{
+			//		var synchronizer = scope.ServiceProvider.GetRequiredService<IDataSynchronizer>();
+
+			//	}
+			//});
+
+			//Переделать на нормальный вид! с фоновым процессом.
+			await _dataSynchronizer.CsvSynchronize(Path.Combine(_fileStorage.StoragePath, file.FileName));
+
+			return Ok();
+		}
+
+		/// <summary>
+		/// Возвращает информацию о текущей выполняемой операции(например синхронизация данных)
+		/// </summary>
+		/// <param name="operationId"></param>
+		/// <returns></returns>
+		public async Task<IActionResult> OperationStatus(int operationId)
+		{
+			string result = await _dataSynchronizer.GetOperationStatus(operationId);
+			if (result == null)
 			{
 				return StatusCode(507);
 			}
-			
-			return Ok("dsddss");
+			return Ok(result);
 		}
 
 		/// <summary>
@@ -114,6 +140,20 @@ namespace GearShop.Controllers
 			string json = JsonConvert.SerializeObject(result);
 
 			return Ok(json);
+		}
+
+
+		[HttpPost]
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> UploadArticleImage(IFormFile file)
+		{
+			string url = await _fileStorage.SaveArticleFile(file);
+			if (string.IsNullOrEmpty(url))
+			{
+				return StatusCode(507);
+			}
+			
+			return Json(url);
 		}
 	}
 }

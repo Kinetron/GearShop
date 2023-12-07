@@ -23,23 +23,23 @@ namespace GearShop.Contracts
         /// <returns></returns>
         string GetUserGroupCode(string userName);
 
-        /// <summary>
-        /// Получить список всех продуктов.
-        /// </summary>
-        /// <returns></returns>
-        List<ProductDto> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
+		/// <summary>
+		/// Получить список всех продуктов.
+		/// </summary>
+		/// <returns></returns>
+		Task<List<ProductDto>> GetProducts(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
 
-        /// <summary>
-        /// Возвращает количество продуктов.
-        /// </summary>
-        /// <returns></returns>
-        int GetProductCount(string searchText, int productTypeId, bool available);
+		/// <summary>
+		/// Возвращает количество продуктов.
+		/// </summary>
+		/// <returns></returns>
+		Task<int> GetProductCount(string searchText, int productTypeId, bool available);
 
-        /// <summary>
-        /// Получает список всех продуктов на складе.
-        /// </summary>
-        /// <returns></returns>
-        List<ProductDto> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
+		/// <summary>
+		/// Получает список всех продуктов на складе.
+		/// </summary>
+		/// <returns></returns>
+		Task<List<ProductDto>> GetProductsFromStockroom(int currentPage, int itemsPerPage, string searchText, int productTypeId, bool available);
 		
 		/// <summary>
 		/// Проверяет наличие guid в БД. Если нет – добавляет новую запись.
@@ -101,6 +101,39 @@ namespace GearShop.Contracts
         /// <param name="model"></param>
         /// <returns></returns>
         Task<bool> DeleteProductAsync(int id);
+	
+		Task<ArticleDto> GetPageContent(string pageName);
+		Task<bool> UpdatePageContent(int id, string text);
 
-    }
+		/// <summary>
+		/// Возвращает список глав для родительской страницы.
+		/// </summary>
+		/// <param name="parentPageName"></param>
+		/// <returns></returns>
+		Task<List<ArticleDto>> GetArticleList(int pageId);
+
+		/// <summary>
+		/// Возвращает статью
+		/// </summary>
+		/// <returns></returns>
+		Task<ArticleDto> GetArticle(int id);
+
+		/// <summary>
+		/// Добавляет статью.
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="pageName"></param>
+		/// <returns></returns>
+		Task<bool> AddArticle(ArticleDto dto);
+
+
+		Task<bool> UpdateArticle(ArticleDto dto);
+
+		/// <summary>
+		/// Удаляет статью.
+		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
+		Task<bool> DeleteArticle(int id);
+	}
 }

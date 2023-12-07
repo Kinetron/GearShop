@@ -71,5 +71,26 @@ namespace RemoteControlApi
 				return await httpClient.SendAsync(request);
 			}
 		}
+
+		public async Task<HttpResponseMessage> GetByParamAsync(string url, string param, string paramName)
+		{
+			using (var httpClient = new HttpClient())
+			{
+				var form = new MultipartFormDataContent();
+
+				var request = new HttpRequestMessage
+				{
+					Method = HttpMethod.Get,
+					RequestUri = new Uri(url),
+				};
+
+				request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+				{
+					{ paramName, param }
+				});
+
+				return await httpClient.SendAsync(request);
+			}
+		}
 	}
 }

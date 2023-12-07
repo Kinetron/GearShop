@@ -315,6 +315,7 @@
 		});
 
 		$('#productsPaginator').puipaginator({
+			rows: "9", @*Количество товара на страницу*@
 			paginate: function (event, state) {
 				ShowcaseScript.setCurrentPage(state.page + 1);
 				$('#tbProductList').puidatatable('reload');
@@ -356,12 +357,8 @@
 			context: this,
 			success: function (response) {
 				$('#recordCountInfo').text(`Найдено ${response.totalRecords} товаров`);
-				$('#productsPaginator').puipaginator({
-					totalRecords: response.totalRecords,
-					rows: response.rows
-				});
-
-				$('#productsPaginator').puipaginator('setState', { totalRecords: response.totalRecords, page: 0 });
+				$('#productsPaginator').puipaginator('setTotalRecords', response.totalRecords);
+				$('#productsPaginator').puipaginator('setPage', 0, false);
 			}
 		});
 	},
