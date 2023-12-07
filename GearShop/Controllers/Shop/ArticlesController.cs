@@ -24,11 +24,11 @@ namespace GearShop.Controllers.Shop
 			return View();
 		}
 
-		public async Task<IActionResult> GetArticles(string parentPageName)
+		public async Task<IActionResult> GetArticles(int pageId)
 		{
 			var serializerSettings = new JsonSerializerSettings();
 			serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-			var list = await _gearShopRepository.GetArticleList(parentPageName);
+			var list = await _gearShopRepository.GetArticleList(pageId);
 			return Ok(JsonConvert.SerializeObject(list, serializerSettings));
 		}
 

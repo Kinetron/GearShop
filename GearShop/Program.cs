@@ -132,7 +132,7 @@ namespace GearShop
                 app.UseHsts();
             }
 
-			//app.UseSerilogRequestLogging();
+			app.UseSerilogRequestLogging();
 
 			app.UseHttpsRedirection();
 	

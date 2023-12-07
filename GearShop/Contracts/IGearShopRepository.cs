@@ -118,7 +118,7 @@ namespace GearShop.Contracts
 		/// </summary>
 		/// <param name="parentPageName"></param>
 		/// <returns></returns>
-		Task<List<ArticleDto>> GetArticleList(string parentPageName);
+		Task<List<ArticleDto>> GetArticleList(int pageId);
 
 		/// <summary>
 		/// Возвращает статью

@@ -7,6 +7,8 @@
 	{
 		public int Id { get; set; }
 
+		public int ParentId { get; set; }
+
 		/// <summary>
 		/// Заголовок статьи.
 		/// </summary>

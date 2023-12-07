@@ -644,12 +644,9 @@ namespace GearShop.Services.Repository
 			}
 		}
 
-		public async Task<List<ArticleDto>> GetArticleList(string parentPageName)
+		public async Task<List<ArticleDto>> GetArticleList(int pageId)
 		{
-			Page parent = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == parentPageName);
-			if (parent == null) return new List<ArticleDto>();
-
-			return await _dbContext.Pages.Where(x=>x.ParentId == parent.Id && x.Deleted == 0)
+			return await _dbContext.Pages.Where(x=>x.ParentId == pageId && x.Deleted == 0)
 			.Select(x => new ArticleDto()
 			{
 				Id = x.Id,
@@ -698,12 +695,9 @@ namespace GearShop.Services.Repository
 		{
 			try
 			{
-				Page parent = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == dto.ParentPageName);
-				if (parent == null) return false;
-
 				Page article = new Page()
 				{
-					ParentId = parent.Id,
+					ParentId = dto.ParentId,
 					Title = dto.Title,
 					TitleImage = dto.TitleImage,
 					Description = dto.Description,
