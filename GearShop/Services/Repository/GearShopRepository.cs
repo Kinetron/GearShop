@@ -565,48 +565,6 @@ namespace GearShop.Services.Repository
 			return true;
 		}
 
-		public async Task<string> GetChapterContent(int? parentId)
-		{
-			Chapter chapter = await _dbContext.Chapters.FirstOrDefaultAsync(x => x.ParentId == parentId && x.Deleted == 0);
-			return chapter?.Content;
-		}
-
-		public Task<List<string>> GetChapterList()
-		{
-			throw new NotImplementedException();
-		}
-
-		public Task<bool> AddChapter(int parentId)
-		{
-			throw new NotImplementedException();
-		}
-
-		public async Task<bool> SaveChapter(string text, int? chapterId)
-		{
-			try
-			{
-				Chapter chapter = null;
-
-				if (!chapterId.HasValue) //Главная.
-				{
-					chapter = await _dbContext.Chapters.FirstAsync(x => x.ParentId == null);
-				}
-				else
-				{
-					chapter = await _dbContext.Chapters.FirstAsync(x => x.Id == chapterId);
-				}
-
-				chapter.Content = text;
-				await _dbContext.SaveChangesAsync();
-				return true;
-			}
-			catch (Exception ex)
-			{
-				Log.Error(ex.Message, ex);
-				return false;
-			}
-		}
-
 		public async Task<ArticleDto> GetPageContent(string pageName)
 		{
 			var page = (await _dbContext.Pages.Where(x => x.Name == pageName && x.Deleted == 0)

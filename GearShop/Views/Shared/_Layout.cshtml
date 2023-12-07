@@ -441,7 +441,7 @@ const PageEditorScript = {
 		const editor = $("#editorControl").detach();
 		$(`#${bntName}`).after(editor);
 
-		@*Редактирование страницы, не главы*@
+		@*Редактирование главы*@
 		if (containerName.length == 0) {
 			
 			const editBlock = $("#editorControl").detach();
@@ -449,6 +449,7 @@ const PageEditorScript = {
 			$(`#article${id}`).before(editBlock);
 			PageEditorScript.editArticle(id);
 			$(`#article${id}`).hide();
+			$('#addArticleBtn').hide();
 		}
 		else
 		{

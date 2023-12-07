@@ -20,8 +20,13 @@ namespace GearShop.Controllers.Shop
 		}
 		public async Task<IActionResult> Index()
 		{
-			ViewData["MainContent"] = await _gearShopRepository.GetChapterContent(null);
-			return View();
+			var dto = await _gearShopRepository.GetPageContent("ArticlesPage");
+			var model = new PageViewModel()
+			{
+				Id = dto.Id,
+				PageContent = dto.Content
+			};
+			return View(model);
 		}
 
 		public async Task<IActionResult> GetArticles(int pageId)

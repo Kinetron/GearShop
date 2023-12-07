@@ -101,15 +101,7 @@ namespace GearShop.Contracts
         /// <param name="model"></param>
         /// <returns></returns>
         Task<bool> DeleteProductAsync(int id);
-
-		/// <summary>
-		/// Возвращает html раздела или страницы «Статьи»
-		/// </summary>
-		/// <returns></returns>
-		Task<string> GetChapterContent(int? parentId);
-		
-		Task<bool> SaveChapter(string text, int? chapterId);
-		
+	
 		Task<ArticleDto> GetPageContent(string pageName);
 		Task<bool> UpdatePageContent(int id, string text);
 
