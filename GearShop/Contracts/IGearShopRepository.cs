@@ -110,8 +110,8 @@ namespace GearShop.Contracts
 		
 		Task<bool> SaveChapter(string text, int? chapterId);
 		
-		Task<string> GetPageContent(string pageName);
-		Task<bool> SavePageContent(string text, string pageName);
+		Task<ArticleDto> GetPageContent(string pageName);
+		Task<bool> UpdatePageContent(int id, string text);
 
 		/// <summary>
 		/// Возвращает список глав для родительской страницы.

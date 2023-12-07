@@ -19,12 +19,18 @@ namespace GearShop.Controllers.AdminArea
 		{
 			_repository = repository;
 		}
-
+		
+		/// <summary>
+		/// Обновляет содержимое страницы.
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="pageName"></param>
+		/// <returns></returns>
 		[Authorize(Roles = "Admin")]
 		[HttpPost]
-		public async Task<IActionResult> Save(string text, string pageName)
+		public async Task<IActionResult> UpdatePageContent(int id, string text)
 		{
-			bool result = await _repository.SavePageContent(text, pageName);
+			bool result = await _repository.UpdatePageContent(id, text);
 			if (result)
 			{
 				return Ok();

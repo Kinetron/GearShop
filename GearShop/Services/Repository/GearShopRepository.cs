@@ -607,17 +607,29 @@ namespace GearShop.Services.Repository
 			}
 		}
 
-		public async Task<string> GetPageContent(string pageName)
+		public async Task<ArticleDto> GetPageContent(string pageName)
 		{
-			Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == pageName);
-			return page?.Content;
+			var page = (await _dbContext.Pages.Where(x => x.Name == pageName && x.Deleted == 0)
+				.Select(x=> new Page()
+				{
+					Id = x.Id,
+					Content = x.Content
+				})
+				.SingleOrDefaultAsync())
+				?? new Page();
+
+			return new ArticleDto()
+			{
+				Id = page.Id,
+				Content = page.Content
+			};
 		}
 
-		public async Task<bool> SavePageContent(string text, string pageName)
+		public async Task<bool> UpdatePageContent(int id, string text)
 		{
 			try
 			{
-				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == pageName);
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id);
 
 				if (page == null) return false;
 				

@@ -1,10 +1,12 @@
 ﻿namespace GearShop.Models.ViewModels
 {
 	/// <summary>
-	/// Главная страница.
+	/// Простая страница.
 	/// </summary>
-	public class MainPageViewModel
+	public class PageViewModel
 	{
+		public int Id { get; set; }
+
 		/// <summary>
 		/// Основное содержимое страницы.
 		/// </summary>

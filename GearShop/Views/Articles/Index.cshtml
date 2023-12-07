@@ -108,7 +108,7 @@ const InfoPageScript = {
 			$('#titleBlock').before(
 				'<div id="editorBlock"><button id="saveArticleBtn" class="hide-block" type="button">Сохранить</button>' +
 				'<button id="addArticlesBtn" class="hide-block" type="button">Добавить</button>' +
-				'<div id="articleEditorControl"></div>' +
+				'<div id="editorControl"></div>' +
 				'</div>');
 			const saveArticleBtn = $('#saveArticleBtn');
 			const addArticlesBtn = $('#addArticlesBtn');
@@ -164,7 +164,7 @@ const InfoPageScript = {
 		  
 		  $('#saveArticleBtn').attr('editingId', id);
 		  $(`#article${id}`).hide();
-			$('[btn-type="editor-btn"]').hide();
+		  $('[btn-type="editor-btn"]').hide();
 	  },
 
 	  deleteArticle(id) {
