@@ -101,30 +101,22 @@ namespace GearShop.Contracts
         /// <param name="model"></param>
         /// <returns></returns>
         Task<bool> DeleteProductAsync(int id);
-
-		/// <summary>
-		/// Возвращает html раздела или страницы «Статьи»
-		/// </summary>
-		/// <returns></returns>
-		Task<string> GetChapterContent(int? parentId);
-		
-		Task<bool> SaveChapter(string text, int? chapterId);
-		
-		Task<string> GetPageContent(string pageName);
-		Task<bool> SavePageContent(string text, string pageName);
+	
+		Task<ArticleDto> GetPageContent(string pageName);
+		Task<bool> UpdatePageContent(int id, string text);
 
 		/// <summary>
 		/// Возвращает список глав для родительской страницы.
 		/// </summary>
 		/// <param name="parentPageName"></param>
 		/// <returns></returns>
-		Task<List<InfoPageDto>> GetArticleList(string parentPageName);
+		Task<List<ArticleDto>> GetArticleList(int pageId);
 
 		/// <summary>
 		/// Возвращает статью
 		/// </summary>
 		/// <returns></returns>
-		Task<InfoPageDto> GetArticle(int id);
+		Task<ArticleDto> GetArticle(int id);
 
 		/// <summary>
 		/// Добавляет статью.
@@ -132,9 +124,16 @@ namespace GearShop.Contracts
 		/// <param name="text"></param>
 		/// <param name="pageName"></param>
 		/// <returns></returns>
-		Task<bool> AddArticle(string title, string content, string parentPageName);
+		Task<bool> AddArticle(ArticleDto dto);
 
 
-		Task<bool> UpdateArticle(string title, string content, int id);
-    }
+		Task<bool> UpdateArticle(ArticleDto dto);
+
+		/// <summary>
+		/// Удаляет статью.
+		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
+		Task<bool> DeleteArticle(int id);
+	}
 }

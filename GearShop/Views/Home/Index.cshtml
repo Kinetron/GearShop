@@ -1,7 +1,7 @@
 ﻿@using GearShop.Models.Dto
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @using GearShop.Models.ViewModels
-@model MainPageViewModel;
+@model PageViewModel
 @{
     ViewData["Title"] = "Главная";
 }
@@ -22,7 +22,8 @@
 
 </style>
 
-<div id="allowEdit" pageName="MainPage"></div>
+@*Добавление кнопок редактирования в режиме администрирования.*@
+<div editable-block="true" content-element-name="pageContent" page-id="@Model.Id"></div>
 <div class="text-start">
 	<div id="galleryControl">
 		<ul>
@@ -68,6 +69,4 @@
 			window.location.href = '@Url.Action("Index", "ProductList")';
 		}
 	});
-
-	//MainMenuScript
 </script>

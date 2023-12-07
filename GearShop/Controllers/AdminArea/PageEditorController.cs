@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using static System.Net.Mime.MediaTypeNames;
+using GearShop.Models.Dto;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GearShop.Controllers.AdminArea
 {
@@ -17,12 +19,18 @@ namespace GearShop.Controllers.AdminArea
 		{
 			_repository = repository;
 		}
-
+		
+		/// <summary>
+		/// Обновляет содержимое страницы.
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="pageName"></param>
+		/// <returns></returns>
 		[Authorize(Roles = "Admin")]
 		[HttpPost]
-		public async Task<IActionResult> Save(string text, string pageName)
+		public async Task<IActionResult> UpdatePageContent(int id, string text)
 		{
-			bool result = await _repository.SavePageContent(text, pageName);
+			bool result = await _repository.UpdatePageContent(id, text);
 			if (result)
 			{
 				return Ok();
@@ -57,9 +65,11 @@ namespace GearShop.Controllers.AdminArea
 		/// <param name="parentPageName"></param>
 		/// <returns></returns>
 		[HttpPost]
-		public async Task<IActionResult> AddArticle(string title, string content, string parentPageName)
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> AddArticle(string data)
 		{
-			bool result = await _repository.AddArticle(title, content, parentPageName);
+			ArticleDto dto = JsonConvert.DeserializeObject<ArticleDto>(data);
+			bool result = await _repository.AddArticle(dto);
 			if (result)
 			{
 				return Ok();
@@ -69,9 +79,24 @@ namespace GearShop.Controllers.AdminArea
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> UpdateArticle(string title, string content, int id)
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> UpdateArticle(string data)
 		{
-			bool result = await _repository.UpdateArticle(title, content, id);
+			ArticleDto dto = JsonConvert.DeserializeObject<ArticleDto>(data);
+			bool result = await _repository.UpdateArticle(dto);
+			if (result)
+			{
+				return Ok();
+			}
+
+			return BadRequest();
+		}
+
+		[HttpPost]
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> DeleteArticle(int id)
+		{
+			bool result = await _repository.DeleteArticle(id);
 			if (result)
 			{
 				return Ok();

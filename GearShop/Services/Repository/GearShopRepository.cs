@@ -20,6 +20,8 @@ using System.Threading.Channels;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using static System.Net.Mime.MediaTypeNames;
 using Page = GearShop.Models.Entities.Page;
+using Humanizer;
+using Azure;
 
 namespace GearShop.Services.Repository
 {
@@ -563,59 +565,29 @@ namespace GearShop.Services.Repository
 			return true;
 		}
 
-		public async Task<string> GetChapterContent(int? parentId)
+		public async Task<ArticleDto> GetPageContent(string pageName)
 		{
-			Chapter chapter = await _dbContext.Chapters.FirstOrDefaultAsync(x => x.ParentId == parentId && x.Deleted == 0);
-			return chapter?.Content;
+			var page = (await _dbContext.Pages.Where(x => x.Name == pageName && x.Deleted == 0)
+				.Select(x=> new Page()
+				{
+					Id = x.Id,
+					Content = x.Content
+				})
+				.SingleOrDefaultAsync())
+				?? new Page();
+
+			return new ArticleDto()
+			{
+				Id = page.Id,
+				Content = page.Content
+			};
 		}
 
-		public Task<List<string>> GetChapterList()
-		{
-			throw new NotImplementedException();
-		}
-
-		public Task<bool> AddChapter(int parentId)
-		{
-			throw new NotImplementedException();
-		}
-
-		public async Task<bool> SaveChapter(string text, int? chapterId)
+		public async Task<bool> UpdatePageContent(int id, string text)
 		{
 			try
 			{
-				Chapter chapter = null;
-
-				if (!chapterId.HasValue) //Главная.
-				{
-					chapter = await _dbContext.Chapters.FirstAsync(x => x.ParentId == null);
-				}
-				else
-				{
-					chapter = await _dbContext.Chapters.FirstAsync(x => x.Id == chapterId);
-				}
-
-				chapter.Content = text;
-				await _dbContext.SaveChangesAsync();
-				return true;
-			}
-			catch (Exception ex)
-			{
-				Log.Error(ex.Message, ex);
-				return false;
-			}
-		}
-
-		public async Task<string> GetPageContent(string pageName)
-		{
-			Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == pageName);
-			return page?.Content;
-		}
-
-		public async Task<bool> SavePageContent(string text, string pageName)
-		{
-			try
-			{
-				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == pageName);
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id);
 
 				if (page == null) return false;
 				
@@ -630,41 +602,45 @@ namespace GearShop.Services.Repository
 			}
 		}
 
-		public async Task<List<InfoPageDto>> GetArticleList(string parentPageName)
+		public async Task<List<ArticleDto>> GetArticleList(int pageId)
 		{
-			Page parent = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == parentPageName);
-			if (parent == null) return new List<InfoPageDto>();
-
-			var list = await _dbContext.Pages.Where(x=>x.ParentId == parent.Id).ToListAsync();
-
-			return list.Select(x => new InfoPageDto()
+			return await _dbContext.Pages.Where(x=>x.ParentId == pageId && x.Deleted == 0)
+			.Select(x => new ArticleDto()
 			{
 				Id = x.Id,
-				Name = x.Name,
 				Title = x.Title,
+				Description = x.Description,
+				TitleImage = x.TitleImage,
 				Content = x.Content,
-				TitleImage = x.TitleImage
-			}).ToList();
+			}).ToListAsync(); 
 		}
 
 		/// <summary>
 		/// Возвращает статью
 		/// </summary>
 		/// <returns></returns>
-		public async Task<InfoPageDto> GetArticle(int id)
+		public async Task<ArticleDto> GetArticle(int id)
 		{
-			Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id);
-
-			if (page == null) return null;
-
-			return new InfoPageDto()
+			try
 			{
-				Id = page.Id,
-				Name = page.Name,
-				Title = page.Title,
-				Content = page.Content,
-				TitleImage = page.TitleImage
-			};
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id && x.Deleted == 0);
+
+				if (page == null) return null;
+
+				return new ArticleDto()
+				{
+					Id = page.Id,
+					Title = page.Title,
+					Description = page.Description,
+					TitleImage = page.TitleImage,
+					Content = page.Content,
+				};
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return null;
+			}
 		}
 
 		/// <summary>
@@ -673,19 +649,17 @@ namespace GearShop.Services.Repository
 		/// <param name="text"></param>
 		/// <param name="pageName"></param>
 		/// <returns></returns>
-		public async Task<bool> AddArticle(string title, string content, string parentPageName)
+		public async Task<bool> AddArticle(ArticleDto dto)
 		{
 			try
 			{
-				Page parent = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Name == parentPageName);
-				if (parent == null) return false;
-
 				Page article = new Page()
 				{
-					Name = Guid.NewGuid().ToString(),
-					ParentId = parent.Id,
-					Title = title,
-					Content = content
+					ParentId = dto.ParentId,
+					Title = dto.Title,
+					TitleImage = dto.TitleImage,
+					Description = dto.Description,
+					Content = dto.Content,
 				};
 
 				await _dbContext.Pages.AddAsync(article);
@@ -700,16 +674,42 @@ namespace GearShop.Services.Repository
 			}
 		}
 
-		public async Task<bool> UpdateArticle(string title, string content, int id)
+		public async Task<bool> UpdateArticle(ArticleDto dto)
+		{
+			try
+			{
+				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == dto.Id);
+				if (page == null) return false;
+
+				page.Title = dto.Title;
+				page.TitleImage = dto.TitleImage;
+				page.Description = dto.Description;
+				page.Content = dto.Content;
+
+				await _dbContext.SaveChangesAsync();
+
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Удаляет статью.
+		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
+		public async Task<bool> DeleteArticle(int id)
 		{
 			try
 			{
 				Page page = await _dbContext.Pages.FirstOrDefaultAsync(x => x.Id == id);
 				if (page == null) return false;
-				
-				page.Title = title;
-				page.Content = content;
-				
+
+				page.Deleted = 1;
 				await _dbContext.SaveChangesAsync();
 
 				return true;

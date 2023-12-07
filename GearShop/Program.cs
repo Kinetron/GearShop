@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using static Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using WebMarkupMin.AspNetCore7;
 
 namespace GearShop
 {
@@ -26,7 +27,7 @@ namespace GearShop
         public static void Main(string[] args)
         {
 			//Добавить нормальную обработку версий!
-			Console.WriteLine("Version 6");
+			Console.WriteLine("Version 7");
 			var builder = WebApplication.CreateBuilder(args);
             var config = builder.Configuration;
 
@@ -92,8 +93,17 @@ namespace GearShop
            builder.Services.AddControllersWithViews()
                .AddRazorRuntimeCompilation(); //Для верстки страниц без перезагрузки сервиса.
 
+            //Сжатие js текста.
+                  builder.Services.AddWebMarkupMin(options =>
+                  {
+                      options.AllowMinificationInDevelopmentEnvironment = true;
+                      options.AllowCompressionInDevelopmentEnvironment = true;
 
-           Log.Logger = new LoggerConfiguration()
+                  }).AddHtmlMinification()
+                  .AddHttpCompression();
+
+
+            Log.Logger = new LoggerConfiguration()
 	           .MinimumLevel.Information()
 	           .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) //Выводить только варнинги Microsoft.
 	           .WriteTo.File(
@@ -111,7 +121,8 @@ namespace GearShop
 			});
 
 			var app = builder.Build();
-			
+
+			app.UseWebMarkupMin();
 
 			// Configure the HTTP request pipeline.
 			if (!app.Environment.IsDevelopment())
@@ -124,7 +135,8 @@ namespace GearShop
 			app.UseSerilogRequestLogging();
 
 			app.UseHttpsRedirection();
-            app.UseStaticFiles();
+	
+			app.UseStaticFiles();
 
             app.UseCookiePolicy();
 

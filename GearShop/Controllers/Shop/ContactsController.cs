@@ -15,8 +15,10 @@ namespace GearShop.Controllers.Shop
 
 		public async Task<IActionResult> Index()
 		{
-			ContactsPageViewModel model = new ContactsPageViewModel();
-			model.PageContent = await _gearShopRepository.GetPageContent("ContactsPage");
+			PageViewModel model = new PageViewModel();
+			var dto = await _gearShopRepository.GetPageContent("ContactsPage");
+			model.Id = dto.Id;
+			model.PageContent = dto.Content;
 			return View(model);
 		}
 	}

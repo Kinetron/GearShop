@@ -20,15 +20,20 @@ namespace GearShop.Controllers.Shop
 		}
 		public async Task<IActionResult> Index()
 		{
-			ViewData["MainContent"] = await _gearShopRepository.GetChapterContent(null);
-			return View();
+			var dto = await _gearShopRepository.GetPageContent("ArticlesPage");
+			var model = new PageViewModel()
+			{
+				Id = dto.Id,
+				PageContent = dto.Content
+			};
+			return View(model);
 		}
 
-		public async Task<IActionResult> GetArticles(string parentPageName)
+		public async Task<IActionResult> GetArticles(int pageId)
 		{
 			var serializerSettings = new JsonSerializerSettings();
 			serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-			var list = await _gearShopRepository.GetArticleList(parentPageName);
+			var list = await _gearShopRepository.GetArticleList(pageId);
 			return Ok(JsonConvert.SerializeObject(list, serializerSettings));
 		}
 
@@ -37,12 +42,13 @@ namespace GearShop.Controllers.Shop
 			var result = await _gearShopRepository.GetArticle(id);
 			var model = new ArticleViewModel()
 			{
-				PageContent = "Ошибка"
+				Content = "Ошибка"
 			};
 
 			if (result != null)
 			{
-				model.PageContent = result.Title + result.Content;
+				model.Title = result.Title;
+				model.Content = result.Content;
 			}
 
 			return View(model);
