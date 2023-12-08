@@ -8,16 +8,19 @@ using Newtonsoft.Json;
 using static System.Net.Mime.MediaTypeNames;
 using GearShop.Models.Dto;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using GearShop.Services;
 
 namespace GearShop.Controllers.AdminArea
 {
 	public class PageEditorController : Controller
 	{
 		private readonly IGearShopRepository _repository;
+		private readonly IFileStorage _fileStorage;
 
-		public PageEditorController(IGearShopRepository repository)
+		public PageEditorController(IGearShopRepository repository, IFileStorage fileStorage)
 		{
 			_repository = repository;
+			_fileStorage = fileStorage;
 		}
 		
 		/// <summary>
@@ -103,6 +106,24 @@ namespace GearShop.Controllers.AdminArea
 			}
 
 			return BadRequest();
+		}
+
+		/// <summary>
+		/// Загружает картинку из статьи.
+		/// </summary>
+		/// <param name="file"></param>
+		/// <returns></returns>
+		[HttpPost]
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> UploadArticleImage(IFormFile file)
+		{
+			string url = await _fileStorage.SaveArticleFile(file);
+			if (string.IsNullOrEmpty(url))
+			{
+				return Json(new { error = _fileStorage.LastError });
+			}
+
+			return Json(new { url });
 		}
 	}
 }
