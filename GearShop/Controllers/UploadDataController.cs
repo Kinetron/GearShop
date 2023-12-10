@@ -141,19 +141,5 @@ namespace GearShop.Controllers
 
 			return Ok(json);
 		}
-
-
-		[HttpPost]
-		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> UploadArticleImage(IFormFile file)
-		{
-			string url = await _fileStorage.SaveArticleFile(file);
-			if (string.IsNullOrEmpty(url))
-			{
-				return StatusCode(507);
-			}
-			
-			return Json(url);
-		}
 	}
 }

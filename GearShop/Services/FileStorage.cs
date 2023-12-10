@@ -12,7 +12,12 @@ namespace GearShop.Services
 		/// Каталог где храниться картинки и прикрепленные файлы статей. 
 		/// </summary>
 		private const string ArticleFilesDir = "article-files";
-		
+
+		/// <summary>
+		/// Максимальный размер файла в статьях(картинки).
+		/// </summary>
+		private const int MaxArticleFileSize = 2 * 1024 * 1024;
+
 		/// <summary>
 		/// Сообщение об ошибке.
 		/// </summary>
@@ -79,6 +84,12 @@ namespace GearShop.Services
 		/// <returns></returns>
 		public async Task<string> SaveArticleFile(IFormFile file)
 		{
+			if (file.Length > MaxArticleFileSize)
+			{
+				LastError = $"Размер файла не может быть больше {MaxArticleFileSize/(1024 * 1024)} Мб";
+				return null;
+			}
+
 			//Файлы группируются по дням.
 			string path = Path.Combine("wwwroot", ArticleFilesDir, DateTime.Now.ToString("dd-MM-yyyy"));
 
