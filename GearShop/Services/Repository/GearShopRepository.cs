@@ -37,6 +37,10 @@ namespace GearShop.Services.Repository
         /// </summary>
         private const string WebSourceName = "Добавлен с сайта";
 
+		/// <summary>
+		/// Игнорирование типа продукта из прайса и картинки.
+		/// </summary>
+		private const int IgnoredTypeAndImageFromPriceCode = 1;
 
 		public GearShopRepository(GearShopDbContext dbContext)
         {
@@ -521,6 +525,20 @@ namespace GearShop.Services.Repository
 					return false;
 				}
 
+				/*				  
+				   Если админ поменял что в товаре на сайте, то при синхронизации 
+				   Картинка и тип товара изменяться не будут. Необходимо 
+				   Для ручной установки картинок и типа товара. Так как в прайсе нет типа товара и работает простой парсер.				   
+				 */
+				var rule = await
+					_dbContext.SynchronizationRules.FirstOrDefaultAsync(x => x.Code == IgnoredTypeAndImageFromPriceCode);
+				
+				if (rule == null)
+				{
+					Log.Error($"Ошибка. Не найден правило синхронизации");
+					return false;
+				}
+
 
 				product.Name = model.Name;
 				product.RetailCost = model.Cost;
@@ -528,8 +546,8 @@ namespace GearShop.Services.Repository
 				product.Rest = model.Amount;
 				product.ProductTypeId = model.ProductTypeId;
 				product.Changed = DateTime.Now;
-
-
+				product.SynchronizationRuleId = rule.Id;
+				
 				await _dbContext.SaveChangesAsync();
 			}
 			catch (Exception ex)

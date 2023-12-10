@@ -3,12 +3,12 @@ using GearShop.Models.Dto.Products;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System.Text.Json.Serialization;
-using System.Text.Json;
 
 namespace GearShop.Controllers.AdminArea
 {
+	/// <summary>
+	/// Изменения на складе.
+	/// </summary>
 	public class StockroomController : Controller
 	{
 		private readonly IGearShopRepository _gearShopRepository;
