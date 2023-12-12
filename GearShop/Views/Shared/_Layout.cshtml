@@ -76,6 +76,7 @@
 	</p>
 </div>
 
+<script src="~/js/counter.js" type="text/javascript"></script>
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
@@ -88,12 +89,13 @@
 	</main>
 </div>
 
-<footer class="border-top footer text-muted">
+	<footer class="border-top footer text-muted">
 	<div class="container">
 		@*Добавление кнопок редактирования в режиме администрирования.*@
 		<div editable-block="true" content-element-name="footerContainer"></div>
 		<div id="footerContainer"></div>
 	</div>
+	<div id="counter"></div> @*Счетчик посещяемости для метрики*@
 </footer>
 	@await RenderSectionAsync("Scripts", required: false)
 </body>
@@ -113,6 +115,8 @@ $(document).ready(function() {
 			$("#footerContainer").html(data.text);
 			$('[content-element-name="footerContainer"]').attr('page-id', data.id);
 		});
+
+	$('#counter').html(getCounterBody());
 });
 
 const MainMenuScript = {
