@@ -54,5 +54,31 @@ namespace GearShop.Services
 				}
 			});
 		}
+
+		/// <summary>
+		/// Отправляет сообщение менеджеру.
+		/// </summary>
+		/// <param name="senderName"></param>
+		/// <param name="senderEmail"></param>
+		/// <param name="senderText"></param>
+		/// <returns></returns>
+		public async Task<bool> SendMessageToManagerAsync(string senderName, string senderEmail, string senderText, string remoteIpAddress)
+		{
+			return await Task.Run(() =>
+			{
+				string body = $"<p>{senderName}</p><p>{senderEmail}</p><p>{remoteIpAddress}</p><p>{senderText}</p>";
+
+				//Шлю письмо менеджеру
+				bool result = _eMailNotifier.SendFromMailRu(_managerEmail, "Новое сообщение с сайта",
+					body);
+
+				if (!result)
+				{
+					_logger.LogError(_eMailNotifier.LastError);
+				}
+
+				return result;
+			});
+		}
 	}
 }
