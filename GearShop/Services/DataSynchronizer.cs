@@ -42,7 +42,7 @@ namespace GearShop.Services
 		/// </summary>
 		/// <param name="fileName"></param>
 		/// <returns></returns>
-		public async Task<bool> CsvSynchronize(string fileName)
+		public async Task<bool> CsvSynchronize(string fileName, string shopName)
 		{
 			CsvParser parser = new CsvParser();
 			List<DataParser.Models.Product> products = parser.ParseFile(fileName, '|');
@@ -77,6 +77,14 @@ namespace GearShop.Services
 			synchronizeStatus.OperationId = operationId;
 			synchronizeStatus.BeginOperation = beginDt;
 			synchronizeStatus.ErrorText = string.Empty;
+
+
+			int? shopId = (await _dbContext.Shops.FirstOrDefaultAsync(s => s.Name == shopName))?.Id;
+			if (shopId == null)
+			{
+				_logger.LogError("Bad shop name");
+				return false;
+			}
 
 			try
 			{
@@ -163,7 +171,8 @@ namespace GearShop.Services
 							Available = item.Available,
 							ProductTypeId = productTypeId.Value,
 							InfoSourceId = infoSourceId.Value,
-							SynchronizationRuleId = defaultSynchronizationRuleId
+							SynchronizationRuleId = defaultSynchronizationRuleId,
+							ShopId = shopId.Value,
 						};
 						
 						product.Created = DateTime.Now;

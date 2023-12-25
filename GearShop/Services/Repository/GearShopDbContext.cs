@@ -78,6 +78,11 @@ namespace GearShop.Services.Repository
 		/// </summary>
 		public DbSet<Page> Pages { get; set; }
 
+		/// <summary>
+		/// Магазины, торгующие рядом продуктов.
+		/// </summary>
+		public DbSet<Shop> Shops { get; set; }
+
 		public string GetUserGroupRole(string userName)
         {
            return this.Database.SqlQueryRaw<string>("SELECT [dbo].GetUserGroupRole(@userName) as value",

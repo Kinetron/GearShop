@@ -22,6 +22,7 @@ using static System.Net.Mime.MediaTypeNames;
 using Page = GearShop.Models.Entities.Page;
 using Humanizer;
 using Azure;
+using HybridCryptLib.Models;
 
 namespace GearShop.Services.Repository
 {
@@ -32,19 +33,22 @@ namespace GearShop.Services.Repository
     {
         private readonly GearShopDbContext _dbContext;
 
-        /// <summary>
-        /// Название источника в таблице InfoSource для добавления данных из web.
-        /// </summary>
-        private const string WebSourceName = "Добавлен с сайта";
+        private readonly ICryptoService _cryptoService;
+
+		/// <summary>
+		/// Название источника в таблице InfoSource для добавления данных из web.
+		/// </summary>
+		private const string WebSourceName = "Добавлен с сайта";
 
 		/// <summary>
 		/// Игнорирование типа продукта из прайса и картинки.
 		/// </summary>
 		private const int IgnoredTypeAndImageFromPriceCode = 1;
 
-		public GearShopRepository(GearShopDbContext dbContext)
+		public GearShopRepository(GearShopDbContext dbContext, ICryptoService cryptoService)
         {
             _dbContext = dbContext;
+			_cryptoService = cryptoService;
         }
 
         /// <summary>
@@ -324,8 +328,19 @@ namespace GearShop.Services.Repository
 
 					await _dbContext.SaveChangesAsync();
 
-					orderInfo.OrderId = order.Id;
-					await _dbContext.OrderInfo.AddAsync(orderInfo);
+					//Кодируем данные.
+					UserInfo userInfo = new UserInfo()
+					{
+						Name = orderInfo.BuyerName,
+						Phone = orderInfo.BuyerPhone,
+						Email = orderInfo.BuyerEmail
+					};
+
+					OrderInfo info = new OrderInfo();
+					info.BuyerInfo = _cryptoService.Crypt(userInfo);
+					info.OrderId = order.Id;
+					
+					await _dbContext.OrderInfo.AddAsync(info);
 					await _dbContext.SaveChangesAsync();
 
 					await transaction.CommitAsync();
@@ -404,9 +419,15 @@ namespace GearShop.Services.Repository
 				}
 
 				//Дополнительная информация о заказе.
-				OrderInfo info = _dbContext.OrderInfo.First(x => x.OrderId == row.Title.OrderId);
-				row.Title.BuyerName = info.BuyerName;
-				row.Title.BuyerPhone = info.BuyerPhone;
+				OrderInfo info = _dbContext.OrderInfo.FirstOrDefault(x => x.OrderId == row.Title.OrderId);
+
+				if (info != null)
+				{
+					UserInfo userInfo = _cryptoService.DeCrypt(info.BuyerInfo);
+
+					row.Title.BuyerName = userInfo.Name;
+					row.Title.BuyerPhone = userInfo.Phone;
+				}
 
 				Order order = _dbContext.Orders.First(x=>x.Id == row.Title.OrderId);
 				row.Title.TotalSum = order.TotalAmount;

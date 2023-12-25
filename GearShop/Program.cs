@@ -34,7 +34,8 @@ namespace GearShop
 			builder.Services.AddDbContext<GearShopDbContext>(options =>
               options.UseSqlServer(config["MsSqlConnectionStrings:Default"]), ServiceLifetime.Transient);
 
-            builder.Services.AddTransient<IGearShopRepository, GearShopRepository>();
+			builder.Services.AddTransient<ICryptoService, CryptoService>();
+			builder.Services.AddTransient<IGearShopRepository, GearShopRepository>();
 
             builder.Services.AddSingleton<IJwtAuth, JwtAuth>();
             builder.Services.AddScoped<IIdentityService, IdentityService>();
