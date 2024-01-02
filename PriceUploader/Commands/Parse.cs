@@ -24,7 +24,7 @@ namespace PriceUploader.Commands
         }
         public void Run()
         {
-	        Remote remote = new Remote(_sendTextToUser, _sendErrorToUser, _printProgress);
+	        RemoteApi remote = new RemoteApi(_sendTextToUser, _sendErrorToUser, _printProgress);
 	        if (!remote.ParseData().Result)
 	        {
 		        _sendErrorToUser(remote.LastError);

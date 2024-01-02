@@ -124,7 +124,8 @@ namespace PriceUploader
                 new Parse(PrintText, PrintError, PrintProgress),
                 new UploadCsv(PrintText, PrintError, PrintProgress),
                 new UploadImages(PrintText, PrintError, PrintProgress),
-				new Exit()
+                new CreateBackup(PrintText, PrintError, PrintProgress),
+                new Exit()
             };
         }
     }

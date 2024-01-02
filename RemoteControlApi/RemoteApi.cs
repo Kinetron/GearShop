@@ -15,7 +15,7 @@ using RemoteControlApi.Models;
 
 namespace RemoteControlApi
 {
-	public class Remote
+	public class RemoteApi
 	{
 		/// <summary>
 		/// Каталог из которого будут загружены файлы.
@@ -29,7 +29,7 @@ namespace RemoteControlApi
 
 		private Excel1сShopParser2022Format _parser; 
 
-		public Remote(Action<string> sendTextToUser, Action<string> sendErrorToUser, Action<int, int> printProgress)
+		public RemoteApi(Action<string> sendTextToUser, Action<string> sendErrorToUser, Action<int, int> printProgress)
 		{
 			_sendTextToUser = sendTextToUser;
 			_sendErrorToUser = sendErrorToUser;
@@ -38,7 +38,7 @@ namespace RemoteControlApi
 
 		public async Task<bool> Authorization()
 		{
-			WebClient client = new WebClient();
+			WebSender client = new WebSender();
 			HttpResponseMessage answer = await client.GetAsync($"{UserData.Host}Login/Authentication", UserData.UserName,
 				UserData.Password);
 
@@ -68,7 +68,7 @@ namespace RemoteControlApi
 		/// <returns></returns>
 		public async Task<List<KeyPair>> GetProductImagesInfo()
 		{
-			WebClient client = new WebClient();
+			WebSender client = new WebSender();
 			HttpResponseMessage answer = await client.GetAsync($"{UserData.Host}UploadData/GetProductImagesInfo", UserData.UserName,
 				   UserData.Password);
 
@@ -184,6 +184,27 @@ namespace RemoteControlApi
 			productTypesParser.DefineProductsType(products);
 			
 			return products;
+		}
+
+		/// <summary>
+		/// Create backup of user files(images, articles) from wwwroot dir.
+		/// </summary>
+		/// <param name="userName"></param>
+		/// <param name="password"></param>
+		public void DownloadRootFiles()
+		{
+			DownloadRootFiles(UserData.UserName, UserData.Password);
+		}
+
+		/// <summary>
+		/// Create backup of user files(images, articles) from wwwroot dir.
+		/// </summary>
+		/// <param name="userName"></param>
+		/// <param name="password"></param>
+		public void DownloadRootFiles(string userName, string password)
+		{
+			WebSender webSender = new WebSender();
+			webSender.DownloadFile(UserData.BackupRootFiles, UserData.UserName, UserData.Password);
 		}
 	}
 }

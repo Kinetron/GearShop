@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using PriceUploader.Contracts;
 using RemoteControlApi;
-using WebClient = RemoteControlApi.WebClient;
+using WebClient = RemoteControlApi.WebSender;
 
 namespace PriceUploader.Commands
 {
@@ -51,14 +51,14 @@ namespace PriceUploader.Commands
 
 
 			_sendTextToUser($"Загрузка файлов на сервер...{Environment.NewLine}");
-            RemoteControlApi.WebClient fileUploader = new RemoteControlApi.WebClient();
+            RemoteControlApi.WebSender fileUploader = new RemoteControlApi.WebSender();
 
 			int total = listArhives.Length;
 			int current = 1;
 			foreach (var file in listArhives)
 			{
 				HttpResponseMessage answer = fileUploader.Upload(UserData.UploadArchivePart, file, UserData.UserName,
-					UserData.Password).Result;
+					UserData.Password, UserData.ShopName).Result;
 
 				if (answer.StatusCode != HttpStatusCode.OK)
 				{
