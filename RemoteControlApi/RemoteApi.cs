@@ -191,9 +191,9 @@ namespace RemoteControlApi
 		/// </summary>
 		/// <param name="userName"></param>
 		/// <param name="password"></param>
-		public void DownloadRootFiles()
+		public async Task<bool> DownloadRootFiles()
 		{
-			DownloadRootFiles(UserData.UserName, UserData.Password);
+			return await DownloadRootFiles(UserData.UserName, UserData.Password);
 		}
 
 		/// <summary>
@@ -201,10 +201,17 @@ namespace RemoteControlApi
 		/// </summary>
 		/// <param name="userName"></param>
 		/// <param name="password"></param>
-		public void DownloadRootFiles(string userName, string password)
+		public async Task<bool> DownloadRootFiles(string userName, string password)
 		{
 			WebSender webSender = new WebSender();
-			webSender.DownloadFile(UserData.BackupRootFiles, UserData.UserName, UserData.Password);
+			if (!await webSender.DownloadFile(UserData.BackupRootFiles, UserData.UserName, UserData.Password, "tmp",
+				    _printProgress))
+			{
+				_sendErrorToUser(webSender.LastError);
+				return false;
+			}
+
+			return true;
 		}
 	}
 }
