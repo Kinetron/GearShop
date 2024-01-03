@@ -12,22 +12,32 @@ namespace GearShop.Services
 		/// Dir name where will save wwwroot backups.
 		/// </summary>
 	    private const string WebFilesBackupsDir = "WebBackups";
-		
+
+		public string LastError { get; private set; }
+
 		/// <summary>
 		/// Add products images and other files to archive and return path to archive.
 		/// </summary>
 		/// <returns></returns>
 		public async Task<string> ArchivingRootFiles()
 		{
-			CreateDir(WebFilesBackupsDir);
+			try
+			{
+				CreateDir(WebFilesBackupsDir);
 
-			string dirName = DateTime.Now.ToString("dd-MM-yyyy HH-mm-ss");
-			string backupDirPath = Path.Combine(WebFilesBackupsDir, dirName);
-			CreateDir(backupDirPath);
-			CopyDirectory("wwwroot", backupDirPath);
+				string dirName = DateTime.Now.ToString("dd-MM-yyyy HH-mm-ss");
+				string backupDirPath = Path.Combine(WebFilesBackupsDir, dirName);
+				CreateDir(backupDirPath);
+				CopyDirectory("wwwroot", backupDirPath);
 
-			//Change to async method.
-			return Archivator.ArchiveFolderToZip(backupDirPath, $"backup_{dirName}");
+				//Change to async method.
+				return Archivator.ArchiveFolderToZip(backupDirPath, $"backup_{dirName}");
+			}
+			catch (Exception e)
+			{
+				LastError = $"{e.Message} {e.StackTrace}";
+				return null;
+			}
 		}
 
 		/// <summary>

@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Handlers;
 using System.Net.Http.Headers;
@@ -149,6 +150,13 @@ namespace RemoteControlApi
 
 				//Don't copy all file in memory.
 				var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+				
+				if (response.StatusCode != HttpStatusCode.OK)
+				{
+					string content = await response.Content.ReadAsStringAsync();
+					LastError = content;
+					return false;
+				}
 
 				using var contentStream = await response.Content.ReadAsStreamAsync();
 

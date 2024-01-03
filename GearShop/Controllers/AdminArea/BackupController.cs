@@ -31,7 +31,7 @@ namespace GearShop.Controllers.AdminArea
 			string path = await _backupService.ArchivingRootFiles();
 			if (path == null)
 			{
-				return StatusCode(505);
+				return StatusCode(500, _backupService.LastError);
 			}
 
 			FileStream fs = new FileStream(path, FileMode.Open);

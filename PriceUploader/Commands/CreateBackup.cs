@@ -42,6 +42,13 @@ namespace PriceUploader.Commands
 
 			RemoteApi api = new RemoteApi(_sendTextToUser, _sendErrorToUser, _printProgress);
 			bool result = api.CreateWebSiteBackup(BackupDir).Result;
+			if (!result)
+			{
+				_sendErrorToUser("Ошибка.");
+				EventEndWork?.Invoke();
+				return;
+			}
+
 			_sendTextToUser($"Бэкап успешно создан и сохранен по пути {BackupDir}.{Environment.NewLine}");
 
 			EventEndWork?.Invoke();

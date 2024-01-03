@@ -7,6 +7,8 @@ namespace GearShop.Contracts;
 /// </summary>
 public interface IBackupService
 {
+	public string LastError { get; }
+
 	/// <summary>
 	/// Add images to archive and return user.
 	/// </summary>
