@@ -4,7 +4,6 @@
 	public static class UserData
 	{
 		private static string _hostName = "http://localhost:80/";
-		//private static string _hostName = "http://autolugansk.ru/";
 
 		public static string Host = _hostName;
 		public static string UserName = "UploaderMan898qw";
@@ -13,6 +12,9 @@
 		public static string UploadArchivePart = $"{_hostName}UploadData/UploadArchivePart";
 
 		public static string UploadCsvUrl = $"{_hostName}UploadData/UploadCsv";
+		public static string ShopName = "Запчасти Matiz";
+
+
 		public static string GetProductImagesInfo = $"{_hostName}UploadData/GetProductImagesInfo";
 
 		/// <summary>
@@ -20,5 +22,10 @@
 		/// </summary>
 		/// <param name="operationId"></param>
 		public static string OperationStatus = $"{_hostName}UploadData/OperationStatus";
+
+		/// <summary>
+		/// Url WebApi for backup files from wwwroot dir.
+		/// </summary>
+		public static string BackupRootFiles = $"{_hostName}Backup/DownloadRootFiles";
 	}
 }

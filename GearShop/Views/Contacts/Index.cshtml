@@ -10,6 +10,18 @@
 	.main-panel {
 		width: 800px;
 	}
+
+	.padding-top {
+		padding-top: 10px;
+	}
+
+	.max-width {
+		width: 100%;
+	}
+
+	.user-text-area {
+		height: 100px;
+	}
 </style>
 
 @*Добавление кнопок редактирования в режиме администрирования.*@
@@ -22,6 +34,41 @@
 	<div id="pageContent">
 		@Html.Raw(Model.PageContent)
 	</div>
+	
+	<div>
+		<h4>Написать нам</h4>
+		<div class="ui-grid ui-grid-responsive">
+			<div class="ui-grid-row padding-top">
+				<div class="ui-grid-col-2">Представтесь</div>
+				<div class="ui-grid-col-10">
+					<input id="nameInput" type="text" class="max-width"/>
+				</div>
+			</div>
+			<div class="ui-grid-row padding-top">
+				<div class="ui-grid-col-2">Электронная почта</div>
+				<div class="ui-grid-col-10">
+					<input id="emailInput" type="text" class="max-width"/>
+				</div>
+			</div>
+			<div class="ui-grid-row padding-top">
+				<div class="ui-grid-col-2">Сообщение</div>
+				<div class="ui-grid-col-10">
+					<textarea id="userTextArea" class="max-width user-text-area"></textarea>
+				</div>
+			</div>
+			<div class="ui-grid-row padding-top">
+				<div class="ui-grid-col-12">
+					<label id="sendLabel" class="ui-widget hide-block">Отправка сообщения...</label>
+				</div>
+			</div>
+			<div class="ui-grid-row padding-top">
+				<div class="ui-grid-col-2"></div>
+				<div class="ui-grid-col-10">
+					<button id="sendUserQuestion" type="button">Отправить</button>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 
 <script type="text/javascript">
@@ -32,10 +79,62 @@
 	});
 
 	$('#mainPаnel').puipanel();
+	$('#nameInput').puiinputtext();
+	$('#emailInput').puiinputtext();
+	$('#userTextArea').puiinputtextarea();
 
 	$('#toBuyBtn').puibutton({
 		click: function (event) {
 			window.location.href = '@Url.Action("Index", "ProductList")';
 		}
 	});
+
+	$('#sendUserQuestion').puibutton({
+		click: function(event) {
+			const data = {
+				name: $('#nameInput').val(),
+				email: $('#emailInput').val(),
+				text: $('#userTextArea').val()
+			};
+
+			if (!validateSendForm(data))
+				return;
+
+			$.ajax({
+				url: '@Url.Action("SendMessageToEmail", "Contacts")',
+				method: 'POST',
+				data: {data: JSON.stringify(data)},
+				beforeSend: function() {
+					$('#sendLabel').show();
+				},
+				success: function(response) {
+					$('#sendLabel').hide();
+					CommonScript.showMessage('info', 'Успешно', '');
+				},
+				error: function(error) {
+					$('#sendLabel').hide();
+					CommonScript.showMessage('error', 'Ошибка', 'Ошибка отправки. Попробуйте еще раз.');
+				}
+			});
+		}
+	});
+
+	function validateSendForm(data) {
+		if (data.name.length === 0) {
+			CommonScript.showMessage('error', 'Ошибка', 'Заполните, как к вам обращаться.');
+			return false;
+		}
+
+		if (data.email.length === 0) {
+			CommonScript.showMessage('error', 'Ошибка', 'Укажите электронную почту что бы мы могли с вами связаться.');
+			return false;
+		}
+
+		if (data.text.length === 0) {
+			CommonScript.showMessage('error', 'Ошибка', 'Сообщение не заполнено.');
+			return false;
+		}
+
+		return true;
+	}
 </script>

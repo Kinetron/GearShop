@@ -120,6 +120,8 @@
 				<div class=@(isMobile ? "searchPanel-mobile" : "searchPanel-desktop")>
 					<input id="searchInput" type="text" />
 					<button id="searchButton" type="button">Поиск</button>
+					<label class="ui-widget">Одна картинка для всех товаров</label>
+					<input id="switchOnePhotoToManyProducts" type="checkbox"></input>
 					<div>
 						<input type="checkbox" name="chk" id="availableCheckBox" value="1" />
 						<label class="ui-widget">В наличии</label>
@@ -189,7 +191,7 @@
 						<label class="ui-widget">Фото</label>
 					</div>
 					<div class="ui-grid-col-7">
-						<form id="form" name="form" action="/UploadFile" enctype="multipart/form-data" method="post" class="block-padding">
+						<form id="formSelectImage" name="form" action="/UploadFile" enctype="multipart/form-data" method="post" class="block-padding">
 							<div class="buttons">
 								<div class="upload-button">
 									<input id="uploadFilesInput" name="files" type="file" size="1"/>
@@ -335,17 +337,28 @@
 
 		$('#availableCheckBox').puicheckbox({
 			change: function (event, checked) {
-	@*От контрола получаем или true или object*@
+		
+		@*От контрола получаем или true или object*@
 					let available = false;
 				if (checked == true) available = true;
 
 				ShowcaseScript.productAvailableChanged(available);
 			}
 		});
+
+		$('#switchOnePhotoToManyProducts').puiswitch({
+			change: function(event) {
+				if (ProductEditWindowScript.imageMode === ProductEditWindowScript.imageModeNormal) {
+					ProductEditWindowScript.imageMode = ProductEditWindowScript.imageModeCopy;
+				} else {
+					ProductEditWindowScript.imageMode = ProductEditWindowScript.imageModeNormal;
+				}
+			}
+		});
 	},
 
 	@*Обновляет данные пейдженатора-количество строк и страниц.*@
-		updatePaginator() {
+	updatePaginator() {
 		$.ajax({
 			type: "GET",
 			url: '/ProductList/GetPaginateData',
@@ -373,6 +386,11 @@
 	updateProductList() {
 		$('#tbProductList').puidatatable('reload');
 		this.updatePaginator();
+	},
+
+	@*Обновляет данные на странице, без сброса пейдженатора.  Используется в редактировании.*@
+	updatePage() {
+		$('#tbProductList').puidatatable('reload');
 	},
 
 	@*Фильтр по типам продуктов.*@
@@ -452,6 +470,14 @@ const ProductEditWindowScript = {
 	addMode: 1,
 	editMode: 2,
 	deleteMode: 3,
+
+	imageModeNormal: 1,
+
+	@*Одна картинка на всех*@
+	imageModeCopy: 2,
+
+	@*Режим добавления/редактирования картинок*@
+	imageMode: 1,
 
 	init() {
 		$('#productEditWindow').puidialog({
@@ -588,7 +614,7 @@ const ProductEditWindowScript = {
 				$('#loaderIndicator').hide();
 				CommonScript.showMessage('info', 'Успешно', 'Данные успешно сохранены.');
 				$('#productEditWindow').puidialog('hide');
-				ShowcaseScript.updateProductList();
+				ShowcaseScript.updatePage();
 			}
 		});
 
@@ -596,7 +622,12 @@ const ProductEditWindowScript = {
 	},
 
 	showModal(mode) {
-	@*Пока не ясно как изменить название окна, контрол не очень рабочий.*@
+		@*Пока не ясно как изменить название окна, контрол primeUi 2017 не очень рабочий.*@
+		
+		if (ProductEditWindowScript.imageMode === ProductEditWindowScript.imageModeNormal) {
+			@*Очистка выбранной картинки если она есть*@
+			$("#formSelectImage")[0].reset();
+		}
 
 		if (mode == this.addMode) {
 			$('#productEditWindow').puidialog('show');

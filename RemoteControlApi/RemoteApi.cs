@@ -15,7 +15,7 @@ using RemoteControlApi.Models;
 
 namespace RemoteControlApi
 {
-	public class Remote
+	public class RemoteApi
 	{
 		/// <summary>
 		/// Каталог из которого будут загружены файлы.
@@ -29,7 +29,7 @@ namespace RemoteControlApi
 
 		private Excel1сShopParser2022Format _parser; 
 
-		public Remote(Action<string> sendTextToUser, Action<string> sendErrorToUser, Action<int, int> printProgress)
+		public RemoteApi(Action<string> sendTextToUser, Action<string> sendErrorToUser, Action<int, int> printProgress)
 		{
 			_sendTextToUser = sendTextToUser;
 			_sendErrorToUser = sendErrorToUser;
@@ -38,7 +38,7 @@ namespace RemoteControlApi
 
 		public async Task<bool> Authorization()
 		{
-			WebClient client = new WebClient();
+			WebSender client = new WebSender();
 			HttpResponseMessage answer = await client.GetAsync($"{UserData.Host}Login/Authentication", UserData.UserName,
 				UserData.Password);
 
@@ -68,7 +68,7 @@ namespace RemoteControlApi
 		/// <returns></returns>
 		public async Task<List<KeyPair>> GetProductImagesInfo()
 		{
-			WebClient client = new WebClient();
+			WebSender client = new WebSender();
 			HttpResponseMessage answer = await client.GetAsync($"{UserData.Host}UploadData/GetProductImagesInfo", UserData.UserName,
 				   UserData.Password);
 
@@ -184,6 +184,50 @@ namespace RemoteControlApi
 			productTypesParser.DefineProductsType(products);
 			
 			return products;
+		}
+
+		/// <summary>
+		/// Create backup user files and db. 
+		/// </summary>
+		/// <returns></returns>
+		public async Task<bool> CreateWebSiteBackup(string dstDir)
+		{
+			CreateDir(dstDir);
+			_sendTextToUser($"Create backup wwwroot dir...{Environment.NewLine}");
+			bool result = await DownloadRootFiles(UserData.UserName, UserData.Password, dstDir);
+			if(!result) return false;
+
+			return true;
+		}
+		
+		/// <summary>
+		/// Create backup of user files(images, articles) from wwwroot dir.
+		/// </summary>
+		/// <param name="userName"></param>
+		/// <param name="password"></param>
+		public async Task<bool> DownloadRootFiles(string userName, string password, string dstDir)
+		{
+			WebSender webSender = new WebSender();
+			if (!await webSender.DownloadFile(UserData.BackupRootFiles, UserData.UserName, UserData.Password, dstDir,
+				    _printProgress))
+			{
+				_sendErrorToUser(webSender.LastError);
+				return false;
+			}
+
+			return true;
+		}
+
+		/// <summary>
+		/// Create dir if not exists.
+		/// </summary>
+		/// <param name="dirName"></param>
+		private void CreateDir(string dirName)
+		{
+			if (!Directory.Exists(dirName))
+			{
+				Directory.CreateDirectory(dirName);
+			}
 		}
 	}
 }

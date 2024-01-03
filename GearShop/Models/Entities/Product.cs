@@ -9,7 +9,9 @@ public class Product
     public int Id { get; set; }
 
     public int ProductTypeId { get; set; }
-	
+
+    public int ShopId { get; set; }
+
 	public string Name { get; set; } = null!;
 
     public decimal? PurchaseCost { get; set; }

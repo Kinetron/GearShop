@@ -42,7 +42,7 @@ namespace GearShop.Services
 		/// </summary>
 		/// <param name="fileName"></param>
 		/// <returns></returns>
-		public async Task<bool> CsvSynchronize(string fileName)
+		public async Task<bool> CsvSynchronize(string fileName, string shopName)
 		{
 			CsvParser parser = new CsvParser();
 			List<DataParser.Models.Product> products = parser.ParseFile(fileName, '|');
@@ -80,6 +80,13 @@ namespace GearShop.Services
 
 			try
 			{
+				int? shopId = (await _dbContext.Shops.FirstOrDefaultAsync(s => s.Name == shopName))?.Id;
+				if (shopId == null)
+				{
+					_logger.LogError("Bad shop name");
+					return false;
+				}
+
 				_dbContext.SaveChanges();
 				
 				//Идентификатор продукта с не известными типом.
@@ -163,7 +170,8 @@ namespace GearShop.Services
 							Available = item.Available,
 							ProductTypeId = productTypeId.Value,
 							InfoSourceId = infoSourceId.Value,
-							SynchronizationRuleId = defaultSynchronizationRuleId
+							SynchronizationRuleId = defaultSynchronizationRuleId,
+							ShopId = shopId.Value,
 						};
 						
 						product.Created = DateTime.Now;
@@ -182,7 +190,7 @@ namespace GearShop.Services
 
 				//Все продукты которых нет в прайс листе будут иметь дату раньше.
 				// Удалим продукты которых нет в прайсе.
-				await DeleteEarlyProducts(beginDt, infoSourceId.Value); //Обновить все продукты 
+				await DeleteEarlyProducts(beginDt, infoSourceId.Value, shopId.Value); //Обновить все продукты 
 
 				//Операция завершена.
 				synchronizeStatus.Current = synchronizeStatus.Total;
@@ -206,10 +214,11 @@ namespace GearShop.Services
 		/// </summary>
 		/// <param name="beginDt"></param>
 		/// <param name="infoSourceId"></param>
-		private async Task<bool> DeleteEarlyProducts(DateTime beginDt, int infoSourceId)
+		private async Task<bool> DeleteEarlyProducts(DateTime beginDt, int infoSourceId, int shopId)
 		{
 			var products = await _dbContext.Products.Where(p => p.Changed < beginDt
-			                                                    && p.InfoSourceId == infoSourceId).ToListAsync();
+			                                                    && p.InfoSourceId == infoSourceId 
+			                                                    && p.ShopId == shopId).ToListAsync();
 			products.ForEach(p=>
 			{
 				p.Deleted = 1;
