@@ -4,7 +4,6 @@
 	public static class UserData
 	{
 		private static string _hostName = "http://localhost:80/";
-		//private static string _hostName = "https://autolugansk.ru/";
 
 		public static string Host = _hostName;
 		public static string UserName = "UploaderMan898qw";
