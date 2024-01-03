@@ -7,9 +7,9 @@ namespace GearShop.Contracts;
 /// </summary>
 public interface IBackupService
 {
-    /// <summary>
-    /// Add images to archive and return user.
-    /// </summary>
-    /// <returns></returns>
-    IActionResult DownloadImages();
+	/// <summary>
+	/// Add images to archive and return user.
+	/// </summary>
+	/// <returns></returns>
+	Task<string> ArchivingRootFiles();
 }

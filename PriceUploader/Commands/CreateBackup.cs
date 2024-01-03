@@ -24,6 +24,11 @@ namespace PriceUploader.Commands
 		private readonly Action<string> _sendErrorToUser;
 		private readonly Action<int, int> _printProgress;
 
+		/// <summary>
+		/// Dir where store backups.
+		/// </summary>
+		private const string BackupDir = "WebBackups";
+
 		public CreateBackup(Action<string> sendTextToUser, Action<string> sendErrorToUser, Action<int, int> printProgress)
 		{
 			_sendTextToUser = sendTextToUser;
@@ -36,7 +41,8 @@ namespace PriceUploader.Commands
 			_sendTextToUser($"Будет создан бэкап сайта.{Environment.NewLine}");
 
 			RemoteApi api = new RemoteApi(_sendTextToUser, _sendErrorToUser, _printProgress);
-			api.DownloadRootFiles();
+			bool result = api.CreateWebSiteBackup(BackupDir).Result;
+			_sendTextToUser($"Бэкап успешно создан и сохранен по пути {BackupDir}.{Environment.NewLine}");
 
 			EventEndWork?.Invoke();
 		}

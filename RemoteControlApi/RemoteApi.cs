@@ -187,24 +187,28 @@ namespace RemoteControlApi
 		}
 
 		/// <summary>
-		/// Create backup of user files(images, articles) from wwwroot dir.
+		/// Create backup user files and db. 
 		/// </summary>
-		/// <param name="userName"></param>
-		/// <param name="password"></param>
-		public async Task<bool> DownloadRootFiles()
+		/// <returns></returns>
+		public async Task<bool> CreateWebSiteBackup(string dstDir)
 		{
-			return await DownloadRootFiles(UserData.UserName, UserData.Password);
-		}
+			CreateDir(dstDir);
+			_sendTextToUser($"Create backup wwwroot dir...{Environment.NewLine}");
+			bool result = await DownloadRootFiles(UserData.UserName, UserData.Password, dstDir);
+			if(!result) return false;
 
+			return true;
+		}
+		
 		/// <summary>
 		/// Create backup of user files(images, articles) from wwwroot dir.
 		/// </summary>
 		/// <param name="userName"></param>
 		/// <param name="password"></param>
-		public async Task<bool> DownloadRootFiles(string userName, string password)
+		public async Task<bool> DownloadRootFiles(string userName, string password, string dstDir)
 		{
 			WebSender webSender = new WebSender();
-			if (!await webSender.DownloadFile(UserData.BackupRootFiles, UserData.UserName, UserData.Password, "tmp",
+			if (!await webSender.DownloadFile(UserData.BackupRootFiles, UserData.UserName, UserData.Password, dstDir,
 				    _printProgress))
 			{
 				_sendErrorToUser(webSender.LastError);
@@ -212,6 +216,18 @@ namespace RemoteControlApi
 			}
 
 			return true;
+		}
+
+		/// <summary>
+		/// Create dir if not exists.
+		/// </summary>
+		/// <param name="dirName"></param>
+		private void CreateDir(string dirName)
+		{
+			if (!Directory.Exists(dirName))
+			{
+				Directory.CreateDirectory(dirName);
+			}
 		}
 	}
 }

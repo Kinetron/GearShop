@@ -7,10 +7,12 @@ namespace GearShop.Controllers.AdminArea
 	public class BackupController : Controller
 	{
 		private readonly IIdentityService _identityService;
+		private readonly IBackupService _backupService;
 
-		public BackupController(IIdentityService identityService)
+		public BackupController(IIdentityService identityService, IBackupService backupService)
 		{
 			_identityService = identityService;
+			_backupService = backupService;
 		}
 		
 		/// <summary>
@@ -26,16 +28,14 @@ namespace GearShop.Controllers.AdminArea
 				return StatusCode(401);
 			}
 
-			try
+			string path = await _backupService.ArchivingRootFiles();
+			if (path == null)
 			{
-				var fs = new FileStream("Program.zip", FileMode.Open);
-				return File(fs, "application/octet-stream", "Program.zip");
+				return StatusCode(505);
 			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e);
-				throw;
-			}
+
+			FileStream fs = new FileStream(path, FileMode.Open);
+			return File(fs, "application/octet-stream", Path.GetFileName(path));
 		}
 	}
 }
