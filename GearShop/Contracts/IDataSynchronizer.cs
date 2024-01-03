@@ -12,7 +12,7 @@ public interface IDataSynchronizer
 	/// </summary>
 	/// <param name="fileName"></param>
 	/// <returns></returns>
-	Task<bool> CsvSynchronize(string fileName);
+	Task<bool> CsvSynchronize(string fileName, string shopName);
 
     /// <summary>
     /// Синхронизация картинок продуктов.

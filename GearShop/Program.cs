@@ -26,17 +26,21 @@ namespace GearShop
     {
         public static void Main(string[] args)
         {
-			//ƒобавить нормальную обработку версий!
-			Console.WriteLine("Version 7");
 			var builder = WebApplication.CreateBuilder(args);
             var config = builder.Configuration;
+
+            //ƒобавить нормальную обработку версий!
+            Console.WriteLine(config["Version"]);
 
 			builder.Services.AddDbContext<GearShopDbContext>(options =>
               options.UseSqlServer(config["MsSqlConnectionStrings:Default"]), ServiceLifetime.Transient);
 
-            builder.Services.AddTransient<IGearShopRepository, GearShopRepository>();
+			builder.Services.AddTransient<ICryptoService, CryptoService>();
+			builder.Services.AddTransient<IGearShopRepository, GearShopRepository>();
 
-            builder.Services.AddSingleton<IJwtAuth, JwtAuth>();
+			builder.Services.AddTransient<IBackupService, BackupService>();
+
+			builder.Services.AddSingleton<IJwtAuth, JwtAuth>();
             builder.Services.AddScoped<IIdentityService, IdentityService>();
 
             builder.Services.AddScoped<IVkAuth, VkAuth>();

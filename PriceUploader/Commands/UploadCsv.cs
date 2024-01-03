@@ -51,13 +51,13 @@ namespace PriceUploader.Commands
             }
 
 			_sendTextToUser($"Загрузка файла на сервер...{Environment.NewLine}");
-            RemoteControlApi.WebClient fileUploader = new RemoteControlApi.WebClient();
+            RemoteControlApi.WebSender fileUploader = new RemoteControlApi.WebSender();
 
             Task.Run(ShowOperationProgress);
 
 			//Переделать на запуск фонового процесса!
 			HttpResponseMessage answer = fileUploader.Upload(UserData.UploadCsvUrl, files[0], UserData.UserName,
-				UserData.Password).Result;
+				UserData.Password, UserData.ShopName).Result;
 
 			if (answer.StatusCode != HttpStatusCode.OK)
             {
@@ -74,7 +74,7 @@ namespace PriceUploader.Commands
 		{
 			await Task.Delay(2000);
 
-			RemoteControlApi.WebClient client = new RemoteControlApi.WebClient();
+			RemoteControlApi.WebSender client = new RemoteControlApi.WebSender();
 
 			while (true)
 			{

@@ -35,7 +35,7 @@ namespace GearShop.Controllers
 		/// <param name="password"></param>
 		/// <returns></returns>
 		[HttpPost]
-		public async Task<IActionResult> UploadCsv(IFormFile file, string userName, string password)
+		public async Task<IActionResult> UploadCsv(IFormFile file, string userName, string password, string shopName)
 		{
 			if(!_identityService.IsValidUser(userName, password))
 			{
@@ -57,7 +57,7 @@ namespace GearShop.Controllers
 			//});
 
 			//Переделать на нормальный вид! с фоновым процессом.
-			await _dataSynchronizer.CsvSynchronize(Path.Combine(_fileStorage.StoragePath, file.FileName));
+			await _dataSynchronizer.CsvSynchronize(Path.Combine(_fileStorage.StoragePath, file.FileName), shopName);
 
 			return Ok();
 		}
@@ -140,20 +140,6 @@ namespace GearShop.Controllers
 			string json = JsonConvert.SerializeObject(result);
 
 			return Ok(json);
-		}
-
-
-		[HttpPost]
-		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> UploadArticleImage(IFormFile file)
-		{
-			string url = await _fileStorage.SaveArticleFile(file);
-			if (string.IsNullOrEmpty(url))
-			{
-				return StatusCode(507);
-			}
-			
-			return Json(url);
 		}
 	}
 }

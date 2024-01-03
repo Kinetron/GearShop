@@ -70,6 +70,10 @@
 	.select-type-product {
 		font-weight: bold!important;color: mediumseagreen;
 	}
+
+	.cursiv-font {
+		font-style: italic;
+	}
 </style>
 
 <div id="mainPanel">
@@ -92,40 +96,49 @@
 			</div>
 		}
 		
-			<div class="ui-grid-row">
+		<div class="ui-grid-row">
 			@if (!isMobile)
-				{
-					<div class="ui-grid-col-2">
-						<ul id="productTypesControl">
-							<li><h3>Товары</h3></li>
-							<li>
+			{
+				<div class="ui-grid-col-2">
+					<ul id="productTypesControl">
+						<li><h3>Товары</h3></li>
+						<li>
 							<a onClick="ShowcaseScript.productTypeChanged(-1);" id="productType-1" class="select-type-product"><i class="fa fa-fw fa-car"></i> Все товары</a>
-							</li>
-							@foreach (var item in (List<KeyValuePair<int, string>>)ViewData["ProductTypes"])
-							{
+						</li>
+						@foreach (var item in (List<KeyValuePair<int, string>>)ViewData["ProductTypes"])
+						{
 							<li><a onClick="ShowcaseScript.productTypeChanged(@item.Key);" id="@("productType" + item.Key.ToString())">@item.Value</a></li>
-							}
-						</ul>
-					</div>
-				}
-				<div class="ui-grid-col-10">
-					<div id="lightboxControl">
-					</div>
-					<div class=@(isMobile ? "searchPanel-mobile" : "searchPanel-desktop")>
-						<input id="searchInput" type="text" />
-						<button id="searchButton" type="button">Поиск</button>
-						<div>
-						<input type="checkbox" name="chk" id="availableCheckBox" value="1" />
-							<label class="ui-widget">В наличии</label>
-						</div>
-					</div>
-					<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
-					<div id="tbProductList"></div>
-					<div id="productsPaginator"></div>
-					<label id="recordCountInfo"></label>
-					<div id="localgrid"></div>
+						}
+					</ul>
 				</div>
+			}
+			<div class="ui-grid-col-10">
+				<div id="lightboxControl">
+				</div>
+				<div class=@(isMobile ? "searchPanel-mobile" : "searchPanel-desktop")>
+					<input id="searchInput" type="text" />
+					<button id="searchButton" type="button">Поиск</button>
+					<div>
+						<input type="checkbox" name="chk" id="availableCheckBox" value="1" />
+						<label class="ui-widget">В наличии</label>
+					</div>
+				</div>
+				<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
+				<div id="tbProductList"></div>
+				<div id="productsPaginator"></div>
+				<label id="recordCountInfo"></label>
+				<div id="localgrid"></div>
 			</div>
+		</div>
+		<br>
+		<div class="ui-grid-row">
+			<div class="ui-grid-col-2"></div>
+			<div class="ui-grid-col-10 cursiv-font">
+				Цены не фиксированные и могут меняться.
+				Действует гибкая система цен.
+				По вопросам регулирования цен обращаться к менеджеру
+			</div>
+		</div>
 		</div>
 </div>
 

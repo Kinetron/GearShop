@@ -16,13 +16,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-	<meta name="google-signin-client_id" content="989279840088-b2v4s1cgc0jf8ijurkudlt9uh5p6tm7l.apps.googleusercontent.com">
     <title>@ViewData["Title"] - Магазин запчастей</title>
     <script src="https://vk.com/js/api/openapi.js?169" type="text/javascript"></script>
 	<link rel="stylesheet" type="text/css" href="~/font-awesome-4.7.0/css/font-awesome.css">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" type="text/css" href="~/primeui/themes/aristo/theme.css">
+	<link rel="stylesheet" type="text/css" href="~/primeui/themes/redmond/theme.css">
     <link href="~/primeui/primeui-all.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="~/ckeditor/content-styles.css" type="text/css">
 	<link rel="stylesheet" href="~/ckeditor/imageresize.css" type="text/css">
@@ -77,6 +76,7 @@
 	</p>
 </div>
 
+<script src="~/js/counter.js" type="text/javascript"></script>
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
@@ -89,12 +89,13 @@
 	</main>
 </div>
 
-<footer class="border-top footer text-muted">
+	<footer class="border-top footer text-muted">
 	<div class="container">
 		@*Добавление кнопок редактирования в режиме администрирования.*@
 		<div editable-block="true" content-element-name="footerContainer"></div>
 		<div id="footerContainer"></div>
 	</div>
+	<div id="counter"></div> @*Счетчик посещяемости для метрики*@
 </footer>
 	@await RenderSectionAsync("Scripts", required: false)
 </body>
@@ -114,6 +115,8 @@ $(document).ready(function() {
 			$("#footerContainer").html(data.text);
 			$('[content-element-name="footerContainer"]').attr('page-id', data.id);
 		});
+
+	$('#counter').html(getCounterBody());
 });
 
 const MainMenuScript = {
@@ -137,8 +140,8 @@ const MainMenuScript = {
 						
 						if (response.isAdmin == true) {
 							@*Для медленных соединений не грузим лишние файлы, нужные только админу.*@
-							CommonScript.loadJsFile('ckeditor/uploadAdapter.js', () => { });
-							CommonScript.loadJsFile('ckeditor/ckeditor.js', () => {
+							CommonScript.loadJsFile('./ckeditor/uploadAdapter.js', () => { });
+							CommonScript.loadJsFile('./ckeditor/ckeditor.js', () => {
 
 								$('#adminLink').show();
 								PageEditorScript.addEditBlocksToPages(); @*Добавляет функционал редактирования страницы.*@
@@ -159,7 +162,7 @@ const MainMenuScript = {
 @*Обвертка для реализации(uploadAdapter.js) плагина загрузки картинок для CKEditor. Так как стандартного нет. Есть платный.*@
 function uploadAdapterPlugin(editor) {
 	editor.plugins.get( 'FileRepository' ).createUploadAdapter = ( loader ) => {
-		return new GearUploadAdapter(loader, '@Url.Action("UploadArticleImage", "UploadData")');
+		return new GearUploadAdapter(loader, '@Url.Action("UploadArticleImage", "PageEditor")');
 	};
 }
 
@@ -221,30 +224,7 @@ const PageEditorScript = {
 		return data;
 	},
 
-	@*Сохранение новой статьи*@
-	saveNewArticle(parentPageName, success) {
-
-		const body  = PageEditorScript._editor.plugins.get('Title').getBody();
-		const info = this._articleInfo(body);
-
-		const dto = {
-			title: PageEditorScript._editor.plugins.get('Title').getTitle(),
-			titleImage: info.imageSrc,
-			description: info.description,
-			content: body,
-			parentPageName: parentPageName
-		};
-
-		CommonScript.ajax('@Url.Action("AddArticle", "PageEditor")',
-			'POST',
-			{ data: JSON.stringify(dto) },
-			() => {
-				PageEditorScript._destroyEditorControl();
-				success();
-			});
-	},
-
-	@*Сохранение новой статьи*@
+	@*Добавление новой статьи*@
 	addArticle(parentId, success) {
 
 		const body  = PageEditorScript._editor.plugins.get('Title').getBody();
@@ -262,6 +242,7 @@ const PageEditorScript = {
 			'POST',
 			{ data: JSON.stringify(dto) },
 			() => {
+				CommonScript.showMessage('info', 'Успешно', '');
 				PageEditorScript._destroyEditorControl();
 				success();
 			});
@@ -301,17 +282,6 @@ const PageEditorScript = {
 	deleteArticle(id, success) {
 		CommonScript.ajax('@Url.Action("DeleteArticle", "PageEditor")',
 			'POST', { id: id }, success);
-	},
-
-	@*Сохраняет измененный текст страницы*@
-	updatePageContentDeleteThis(pageName, success) {
-		const text = PageEditorScript._editor.getData();
-
-		CommonScript.ajax('@Url.Action("UpdatePageContent", "PageEditor")', 'POST',
-			{ text: text, pageName: pageName }, () => {
-				PageEditorScript._destroyEditorControl();
-				success();
-			});
 	},
 
 	@*Сохраняет измененный текст страницы.*@
@@ -598,6 +568,11 @@ const CommonScript = {
 				modal: true,
 				title: 'Обработка...'
 			});
+
+			@*Изменяем глобальный alert на свой. Так как checkeditor использует его.*@
+			window.alert = function(message) {
+				CommonScript.showMessage('error', 'Ошибка', message);
+			};
 		},
 
 		@*Отображает сообщение.*@
@@ -771,17 +746,15 @@ const CommonScript = {
 			},
 			success: function (response) {
 				CommonScript.hideLoadIndicator();
-				CommonScript.showMessage('info', 'Успешно', '');
 				success(response);
 			},
 			error: function (error) {
-				console.log(error);
 				CommonScript.hideLoadIndicator();
 				CommonScript.showMessage('error', 'Ошибка', 'Ошибка сохранения данных.');
 			}
 		});
 	},
-
+	
 	@*Тихий - без вывода сообщений*@
 	silentAjax(url, method, data, success) {
 		$.ajax({

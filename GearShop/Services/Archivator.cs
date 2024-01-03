@@ -9,11 +9,20 @@ namespace GearShop.Services
 {
 	internal static class Archivator
 	{
-		public static string ArchiveFolderToZip(string folderPath, string archiveName)
+		public static string LastError;
+		public static string? ArchiveFolderToZip(string folderPath, string archiveName)
 		{
-			string zipPath = Path.Combine(Path.GetDirectoryName(folderPath), $"{archiveName}.zip");
-			ZipFile.CreateFromDirectory(folderPath, zipPath, CompressionLevel.Fastest, true);
-			return zipPath;
+			try
+			{
+				string? zipPath = Path.Combine(Path.GetDirectoryName(folderPath), $"{archiveName}.zip");
+				ZipFile.CreateFromDirectory(folderPath, zipPath, CompressionLevel.Fastest, true);
+				return zipPath;
+			}
+			catch (Exception ex)
+			{
+				LastError = $"{ex.Message} {ex.StackTrace}";
+				return null;
+			}
 		}
 
 		public static void UnpackZipToFolder(string zipPath, string extractPath)

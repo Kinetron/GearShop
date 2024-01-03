@@ -13,6 +13,8 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
 using System.Security.Cryptography;
 using System.IO;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 
 namespace DataParser
@@ -602,7 +604,8 @@ namespace DataParser
 
 					string imagePath = Path.Combine(ImageFolder, $"{productId.Id}.png");
 					File.WriteAllBytes(imagePath, image.Data);
-
+					ResizeImage(imagePath, 640, 480);
+                    
 					progressInfo(currentRow, totalRows); //Передаем пользователю о прогрессе обработки строк.
 					currentRow++;
 				}
@@ -647,6 +650,19 @@ namespace DataParser
 				FileInfo fi = new FileInfo(file);
 				fi.Delete();
 			}
+		}
+
+		/// <summary>
+		/// Изменяет размер картинки.
+		/// </summary>
+		/// <param name="file"></param>
+		/// <param name="width"></param>
+		/// <param name="height"></param>
+		private void ResizeImage(string file, int width, int height)
+        {
+	        Image img = Image.Load(file);
+	        img.Mutate(x => x.Resize(width, height));
+	        img.Save(file);
 		}
 	}
 }
