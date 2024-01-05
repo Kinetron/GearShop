@@ -37,9 +37,7 @@ namespace GearShop
 
 			builder.Services.AddTransient<ICryptoService, CryptoService>();
 			builder.Services.AddTransient<IGearShopRepository, GearShopRepository>();
-
-			builder.Services.AddTransient<IBackupService, BackupService>();
-
+            
 			builder.Services.AddSingleton<IJwtAuth, JwtAuth>();
             builder.Services.AddScoped<IIdentityService, IdentityService>();
 
@@ -69,13 +67,23 @@ namespace GearShop
 		            config["EmailNotifier:senderPassword"],
 		            config["EmailNotifier:companyName"]));
 
-			var provider =builder.Services.BuildServiceProvider();
+			var provider = builder.Services.BuildServiceProvider();
 
 			builder.Services.AddSingleton<INotifier, Notifier>(x =>
 	            new Notifier(config["EmailNotifier:managerEmail"],
 		            provider.GetService<IEMailNotifier>(), provider.GetService<ILogger<Notifier>>()));
 
-            builder.Services.AddSingleton<IFileStorage>(x=>new FileStorage("Upload\\Files"));
+			if (!bool.TryParse(config["DbBackupSettings:AllowDownloadDbBackup"], out bool allowDownloadDbBackup))
+			{
+				throw new ArgumentException("Bad param for DbBackupSettings:AllowDownloadDbBackup");
+			}
+
+			builder.Services.AddTransient<IBackupService>(x => new BackupService(allowDownloadDbBackup,
+				config["DbBackupSettings:PathToDbBackupFiles"],
+				provider.GetService<IGearShopRepository>()));
+
+
+			builder.Services.AddSingleton<IFileStorage>(x=>new FileStorage("Upload\\Files"));
 			builder.Services.AddSingleton<IGoogleAuth, GoogleAuth> ();
 			
 

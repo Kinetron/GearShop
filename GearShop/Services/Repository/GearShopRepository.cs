@@ -759,5 +759,22 @@ namespace GearShop.Services.Repository
 				return false;
 			}
 		}
+		
+		/// <summary>
+		/// Create database backup.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<string> BackupDbAsync()
+		{
+			try
+			{
+				return await _dbContext.BackupDbAsync();
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return null;
+			}
+		}
     }
 }

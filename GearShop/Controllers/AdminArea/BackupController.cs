@@ -37,5 +37,29 @@ namespace GearShop.Controllers.AdminArea
 			FileStream fs = new FileStream(path, FileMode.Open);
 			return File(fs, "application/octet-stream", Path.GetFileName(path));
 		}
+
+		/// <summary>
+		/// Create and return Db backup file. If it allow in appsettings.json.
+		/// </summary>
+		/// <param name="userName"></param>
+		/// <param name="password"></param>
+		/// <returns></returns>
+		[HttpPost]
+		public async Task<IActionResult> DownloadDbBackup(string userName, string password)
+		{
+			if (!_identityService.IsValidUser(userName, password))
+			{
+				return StatusCode(401);
+			}
+
+			string path = await _backupService.CreateDbBackup();
+			if (path == null)
+			{
+				return StatusCode(500, _backupService.LastError);
+			}
+
+			FileStream fs = new FileStream(path, FileMode.Open);
+			return File(fs, "application/octet-stream", Path.GetFileName(path));
+		}
 	}
 }
