@@ -27,5 +27,10 @@
 		/// Url WebApi for backup files from wwwroot dir.
 		/// </summary>
 		public static string BackupRootFiles = $"{_hostName}Backup/DownloadRootFiles";
+
+		/// <summary>
+		/// Url WebApi for download db backup.
+		/// </summary>
+		public static string DownloadDbBackup = $"{_hostName}Backup/DownloadDbBackup";
 	}
 }
