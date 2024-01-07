@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NuGet.ContentModel;
 using System.Collections.Generic;
+using GearShop.Helpers;
 using GearShop.Models;
 using GearShop.Models.Entities;
 using Newtonsoft.Json.Serialization;
@@ -16,13 +17,11 @@ namespace GearShop.Controllers.Shop
 	{
 		private readonly IGearShopRepository _repository;
 		private readonly INotifier _notifier;
-		private readonly IHttpContextAccessor _httpContextAccessor;
 
-		public OrderController(IGearShopRepository repository, INotifier notifier, IHttpContextAccessor httpContextAccessor)
+		public OrderController(IGearShopRepository repository, INotifier notifier)
 		{
 			_repository = repository;
 			_notifier = notifier;
-			_httpContextAccessor = httpContextAccessor;
 		}
 
 		/// <summary>
@@ -48,7 +47,7 @@ namespace GearShop.Controllers.Shop
 		[HttpPost]
 		public async Task<IActionResult> CreateOrder(List<ProductDto> model, OrderInfo orderInfo, string userGuid)
 		{
-			string remoteIpAddress = GetRemoteIp();
+			string remoteIpAddress = HttpHelper.GetRemoteIp(HttpContext);
 
 			long orderNumber = await _repository.CreateOrder(model, orderInfo, userGuid, remoteIpAddress);
 			if (orderNumber == -1)
@@ -104,15 +103,6 @@ namespace GearShop.Controllers.Shop
 
 			var json = JsonConvert.SerializeObject(orderList, Formatting.Indented, settings);
 			return Ok(json);
-		}
-		
-		private string GetRemoteIp()
-		{
-			string remoteIpAddress = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
-			if (Request.Headers.ContainsKey("X-Forwarded-For"))
-				remoteIpAddress = Request.Headers["X-Forwarded-For"];
-
-			return remoteIpAddress;
 		}
 	}
 }

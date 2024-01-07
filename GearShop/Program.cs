@@ -88,7 +88,6 @@ namespace GearShop
 			
 
 			builder.Services.AddDistributedMemoryCache();
-			builder.Services.AddHttpContextAccessor();
 
 			builder.Services.AddSession(options =>
             {
@@ -106,7 +105,7 @@ namespace GearShop
                .AddRazorRuntimeCompilation(); //Для верстки страниц без перезагрузки сервиса.
 
             //Сжатие js текста.
-                  builder.Services.AddWebMarkupMin(options =>
+            builder.Services.AddWebMarkupMin(options =>
                   {
                       options.AllowMinificationInDevelopmentEnvironment = true;
                       options.AllowCompressionInDevelopmentEnvironment = true;
