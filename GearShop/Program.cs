@@ -78,6 +78,11 @@ namespace GearShop
 				throw new ArgumentException("Bad param for DbBackupSettings:AllowDownloadDbBackup");
 			}
 
+			if (string.IsNullOrEmpty(config["DbBackupSettings:AllowedIp"]))
+			{
+				throw new ArgumentException("Bad param for DbBackupSettings:AllowedIp");
+			}
+
 			builder.Services.AddTransient<IBackupService>(x => new BackupService(allowDownloadDbBackup,
 				config["DbBackupSettings:PathToDbBackupFiles"],
 				provider.GetService<IGearShopRepository>()));

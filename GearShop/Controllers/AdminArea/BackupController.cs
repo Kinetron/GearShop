@@ -1,6 +1,8 @@
 ﻿using GearShop.Contracts;
+using GearShop.Helpers;
 using GearShop.Services;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace GearShop.Controllers.AdminArea
 {
@@ -9,10 +11,16 @@ namespace GearShop.Controllers.AdminArea
 		private readonly IIdentityService _identityService;
 		private readonly IBackupService _backupService;
 
-		public BackupController(IIdentityService identityService, IBackupService backupService)
+		/// <summary>
+		/// Ip allowed for download backups.
+		/// </summary>
+		private readonly string _allowBackupDownloadIp;
+
+		public BackupController(IIdentityService identityService, IBackupService backupService, IConfiguration configuration)
 		{
 			_identityService = identityService;
 			_backupService = backupService;
+			_allowBackupDownloadIp = configuration["DbBackupSettings:AllowedIp"];
 		}
 		
 		/// <summary>
@@ -23,6 +31,13 @@ namespace GearShop.Controllers.AdminArea
 		[HttpPost]
 		public async Task<IActionResult> DownloadRootFiles(string userName, string password)
 		{
+			string remoteIpAddress = HttpHelper.GetRemoteIp(HttpContext);
+			if (!HttpHelper.IpInSubNetOrEqual(remoteIpAddress, _allowBackupDownloadIp))
+			{
+				Log.Logger.Information($"Deny ip for backup {remoteIpAddress}");
+				return StatusCode(403);
+			}
+
 			if (!_identityService.IsValidUser(userName, password))
 			{
 				return StatusCode(401);
@@ -47,6 +62,12 @@ namespace GearShop.Controllers.AdminArea
 		[HttpPost]
 		public async Task<IActionResult> DownloadDbBackup(string userName, string password)
 		{
+			string remoteIpAddress = HttpHelper.GetRemoteIp(HttpContext);
+			if (!HttpHelper.IpInSubNetOrEqual(remoteIpAddress, _allowBackupDownloadIp))
+			{
+				return StatusCode(403);
+			}
+
 			if (!_identityService.IsValidUser(userName, password))
 			{
 				return StatusCode(401);

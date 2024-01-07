@@ -16,5 +16,38 @@
 
 			return remoteIpAddress;
 		}
+
+		/// <summary>
+		/// Check ip if exist in current subnet. Instead of subnet use allowed ip. 
+		/// </summary>
+		/// <param name="ip"></param>
+		/// <param name="subnet"></param>
+		/// <returns></returns>
+		public static bool IpInSubNetOrEqual(string ip, string subnet)
+		{
+			//is subnet
+			if (subnet.Contains('/'))
+			{
+				string[] strArr = subnet.Split('/');
+				string[] ipPartSubnet = strArr[0].Split(".");
+				string[] ipPart = ip.Split(".");
+
+				if (ipPartSubnet[0] == "0") return true; //Allow any.
+
+				for (int i = 0; i < 3; i++)
+				{
+					if (ipPart[i] != ipPartSubnet[i])
+					{
+						return false;
+					}
+				}
+
+				return true;
+			}
+			else
+			{
+				return ip == subnet;
+			}
+		}
 	}
 }
