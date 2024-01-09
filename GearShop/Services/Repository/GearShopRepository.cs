@@ -651,7 +651,26 @@ namespace GearShop.Services.Repository
 				Description = x.Description,
 				TitleImage = x.TitleImage,
 				Content = x.Content,
+				PublishDate = x.Created.Value.ToString("MMMM dd, yyyy")
 			}).ToListAsync(); 
+		}
+
+		/// <summary>
+		/// Return newsfeed.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<List<ArticleDto>> GetNewsfeed(int pageId)
+		{
+			return await _dbContext.Pages.Where(x=> x.ParentId == pageId && x.Deleted == 0).OrderByDescending(x=>x.Created)
+				.Select(x => new ArticleDto()
+				{
+					Id = x.Id,
+					Title = x.Title,
+					Description = x.Description,
+					TitleImage = x.TitleImage,
+					Content = x.Content,
+					PublishDate = x.Created.Value.ToString("MMMM dd, yyyy")
+				}).ToListAsync();
 		}
 
 		/// <summary>

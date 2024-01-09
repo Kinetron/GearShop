@@ -7,6 +7,23 @@
 	.user-name-block {
 		padding-right: 10px;
 	}
+
+	.main-block {
+		margin-left: 1px !important;
+	}
+
+	.article-date {
+		color: #4b4b4e;
+		display: block;
+		font-size: 14px;
+	}
+
+	.news-image {
+		width: 75px;
+		height: 75px;
+		padding: 8px 0px 0px 0px;
+		align: middle;
+	}
 </style>
 
 
@@ -82,14 +99,14 @@
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script src="~/primeui/primeui-all.js"></script>
 
-<div class="container">
+<div class="container main-block">
 	<main role="main" class="pb-3">
 		<div id="messageControl"></div>
 		@RenderBody()
 	</main>
 </div>
 
-	<footer class="border-top footer text-muted">
+<footer class="border-top footer text-muted">
 	<div class="container">
 		@*Добавление кнопок редактирования в режиме администрирования.*@
 		<div editable-block="true" content-element-name="footerContainer"></div>
@@ -490,6 +507,9 @@ const PageEditorScript = {
 				 <div class="ui-grid-col-10">
 					 <header>
 					<div>
+						<div class="article-date">
+							 ${item.publishDate}
+						</div>
 						<h4>
 							<a href="@Url.Action("Article", "Articles")?id=${item.id}">
 								<font style="vertical-align: inherit;">
@@ -548,7 +568,57 @@ const PageEditorScript = {
 				});
 
 		});
-	}
+	},
+
+	@*Fill block for show news*@
+	_fillNewsBlock(item) {
+
+		@*Применение отдельного шаблона, при больших объемах замедляет страницу.*@
+		return `<div class="ui-grid-row" id="article${item.id}">
+				 <div class="ui-grid-col-2">
+					 <figure>
+						<img src="${item.titleImage}" class="news-image">
+					 </figure>
+				 </div>
+				 <div class="ui-grid-col-10">
+					  <div class="article-date">
+								 ${item.publishDate}
+					 </div>
+					 <h6>
+						<a href="@Url.Action("Article", "Articles")?id=${item.id}">
+							<font style="vertical-align: inherit;">
+										${item.title}
+							</font>
+						</a>
+					</h6>
+				</div>
+			 </div>`;
+	},
+
+	@*Create news list.*@
+	_createNewsList(data, blockId) {
+		const list = JSON.parse(data);
+
+		let text = '';
+		list.forEach((item) => {
+			text += this._fillNewsBlock(item);
+		});
+		
+		const html = '<div class="ui-grid ui-grid-responsive">' + text + 
+							  '</div>';
+		$(`#${blockId}`).html(html);
+	},
+
+	@*Add news block to page.*@
+	addNewsBlock(blockId, pageId) {
+		CommonScript.silentAjax('@Url.Action("GetNewsfeed", "Articles")',
+				'GET',
+				{ pageId: pageId},
+				(response) => {
+					PageEditorScript._createNewsList(response, blockId);
+				});
+
+	},
 }
 
 @*Общий набор функций для всех страниц.*@

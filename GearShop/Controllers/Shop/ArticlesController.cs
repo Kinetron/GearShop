@@ -29,6 +29,11 @@ namespace GearShop.Controllers.Shop
 			return View(model);
 		}
 
+		/// <summary>
+		/// Return articles list for create preview page.
+		/// </summary>
+		/// <param name="pageId"></param>
+		/// <returns></returns>
 		public async Task<IActionResult> GetArticles(int pageId)
 		{
 			var serializerSettings = new JsonSerializerSettings();
@@ -37,6 +42,11 @@ namespace GearShop.Controllers.Shop
 			return Ok(JsonConvert.SerializeObject(list, serializerSettings));
 		}
 
+		/// <summary>
+		/// Return article content.
+		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
 		public async Task<IActionResult> Article(int id)
 		{
 			var result = await _gearShopRepository.GetArticle(id);
@@ -52,6 +62,18 @@ namespace GearShop.Controllers.Shop
 			}
 
 			return View(model);
+		}
+
+		/// <summary>
+		/// Return newsfeed.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<IActionResult> GetNewsfeed(int pageId)
+		{
+			var serializerSettings = new JsonSerializerSettings();
+			serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+			var list = await _gearShopRepository.GetNewsfeed(pageId);
+			return Ok(JsonConvert.SerializeObject(list, serializerSettings));
 		}
 	}
 }

@@ -24,7 +24,7 @@ namespace GearShop.Tests
 		public void CreateDbBackup()
 		{
 			var repo = new Mock<IGearShopRepository>();
-			repo.Setup(x=>x.BackupDbAsync()).Returns(Task.FromResult(true));
+			repo.Setup(x=>x.BackupDbAsync()).Returns(Task.FromResult("path Db"));
 			IBackupService backupService = new BackupService(true, "g:\\tmp\\", repo.Object);
 			string path = backupService.CreateDbBackup().Result;
 			Assert.IsNotNull(path);
@@ -34,7 +34,7 @@ namespace GearShop.Tests
 		public void DenyCreateDbBackup()
 		{
 			var repo = new Mock<IGearShopRepository>();
-			repo.Setup(x => x.BackupDbAsync()).Returns(Task.FromResult(true));
+			repo.Setup(x => x.BackupDbAsync()).Returns(Task.FromResult("path Db"));
 			IBackupService backupService = new BackupService(false, "g:\\tmp\\", repo.Object);
 			string path = backupService.CreateDbBackup().Result;
 			Assert.IsNull(path);

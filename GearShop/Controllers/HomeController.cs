@@ -28,7 +28,12 @@ namespace GearShop.Controllers
             var dto = await _gearShopRepository.GetPageContent("MainPage");
             model.Id = dto.Id;
             model.PageContent = dto.Content;
-	        return View(model);
+
+            //For show nesfeed block.
+            var articleDto = await _gearShopRepository.GetPageContent("ArticlesPage");
+            ViewData["articlePageId"] = articleDto.Id;
+
+			return View(model);
         }
         
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

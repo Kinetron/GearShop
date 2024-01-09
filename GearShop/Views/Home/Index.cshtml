@@ -20,53 +20,71 @@
 		font-weight: bold;
 	}
 
+	.title-news-block {
+		text-align: center;
+	}
 </style>
 
 @*Добавление кнопок редактирования в режиме администрирования.*@
 <div editable-block="true" content-element-name="pageContent" page-id="@Model.Id"></div>
-<div class="text-start">
-	<div id="galleryControl">
-		<ul>
-			@{
-				foreach (var item in (List<SlaiderMainPageDto>)ViewData["SlaiderData"])
-				{
-					<li><img src="gallery/@item.FileName" alt="@item.Description" title="@item.Title" /></li>
-				}
-			}
-		</ul>
-	</div>
 
-	<div id="mainPаnel" class="main-panel">
-		<p>
-			<button id="toBuyBtn" type="button">К покупкам</button>
-		</p>
+<div class="ui-grid ui-grid-responsive">
+	<div class="ui-grid-row">
+		<div class="ui-grid-col-9">
+			<div id="galleryControl">
+				<ul>
+					@{
+						foreach (var item in (List<SlaiderMainPageDto>)ViewData["SlaiderData"])
+						{
+							<li><img src="gallery/@item.FileName" alt="@item.Description" title="@item.Title" /></li>
+						}
+					}
+				</ul>
+			</div>
+			<div id="mainPаnel" class="main-panel">
+				<p>
+					<button id="toBuyBtn" type="button">К покупкам</button>
+				</p>
 		
-		<div id="pageContent">
-			@Html.Raw(Model.PageContent)
+				<div id="pageContent">
+					@Html.Raw(Model.PageContent)
+				</div>
+				<p>
+					<a class="nav-link text-dark contact-label" asp-controller="Contacts" asp-action="Index">Контакты</a>
+				</p>
+			</div>
 		</div>
-		<p>
-			<a class="nav-link text-dark contact-label" asp-controller="Contacts" asp-action="Index">Контакты</a>
-		</p>
+		<div class="ui-grid-col-6 ui-widget ui-widget-content ui-corner-all ui-panel">
+			<p>
+				<h3 class="title-news-block">Лента новостей</h3>
+				<hr>
+			</p>
+			<div id="newsfeed">
+			</div>
+		</div>
 	</div>
 </div>
 
 <script type="text/javascript">
 	$(document).ready(function() {
+		$('#default').puipanel();
+		$('#galleryControl').puigalleria({
+			panelWidth: 800,
+			panelHeight: 200
+		});
 
-	});
-
-
-	$('#default').puipanel();
-	$('#galleryControl').puigalleria({
-		panelWidth: 800,
-		panelHeight: 200
-	});
-
-	$('#mainPаnel').puipanel();
+		$('#mainPаnel').puipanel();
 	
-	$('#toBuyBtn').puibutton({
-		click: function(event) {
-			window.location.href = '@Url.Action("Index", "ProductList")';
-		}
+		$('#toBuyBtn').puibutton({
+			click: function(event) {
+				window.location.href = '@Url.Action("Index", "ProductList")';
+			}
+		});
+		
+		@*newsfeed*@
+		PageEditorScript.addNewsBlock("newsfeed",@((int)ViewData["articlePageId"]));
 	});
+
+
+
 </script>
