@@ -24,6 +24,11 @@
 		padding: 8px 0px 0px 0px;
 		align: middle;
 	}
+
+	.container:fullscreen{
+		max-width: 4000px;
+	}
+
 </style>
 
 
@@ -99,7 +104,7 @@
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script src="~/primeui/primeui-all.js"></script>
 
-<div class="container main-block">
+<div class="container.fullscreen main-block">
 	<main role="main" class="pb-3">
 		<div id="messageControl"></div>
 		@RenderBody()
