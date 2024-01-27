@@ -1,5 +1,6 @@
 ﻿using GearShop.Contracts;
 using GearShop.Models.ViewModels;
+using Humanizer;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -26,6 +27,8 @@ namespace GearShop.Controllers.Shop
 				Id = dto.Id,
 				PageContent = dto.Content
 			};
+
+			ViewData["Title"] = dto.Title;
 			return View(model);
 		}
 
@@ -61,6 +64,7 @@ namespace GearShop.Controllers.Shop
 				model.Content = result.Content;
 			}
 
+			ViewData["Title"] = model.Title;
 			return View(model);
 		}
 
