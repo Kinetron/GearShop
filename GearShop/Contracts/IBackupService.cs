@@ -14,4 +14,10 @@ public interface IBackupService
 	/// </summary>
 	/// <returns></returns>
 	Task<string> ArchivingRootFiles();
+
+	/// <summary>
+	/// Create and return Db backup file. If it allow in appsetings.json.
+	/// </summary>
+	/// <returns>Path to file.</returns>
+	Task<string> CreateDbBackup();
 }

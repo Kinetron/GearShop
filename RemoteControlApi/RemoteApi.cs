@@ -194,8 +194,12 @@ namespace RemoteControlApi
 		{
 			CreateDir(dstDir);
 			_sendTextToUser($"Create backup wwwroot dir...{Environment.NewLine}");
-			bool result = await DownloadRootFiles(UserData.UserName, UserData.Password, dstDir);
-			if(!result) return false;
+			bool result = await DownloadFile(UserData.BackupRootFiles, UserData.UserName, UserData.Password, dstDir);
+			if (!result) return false;
+
+			_sendTextToUser($"Create and download db backup...{Environment.NewLine}");
+			result = await DownloadFile(UserData.DownloadDbBackup, UserData.UserName, UserData.Password, dstDir);
+			if (!result) return false;
 
 			return true;
 		}
@@ -205,10 +209,10 @@ namespace RemoteControlApi
 		/// </summary>
 		/// <param name="userName"></param>
 		/// <param name="password"></param>
-		public async Task<bool> DownloadRootFiles(string userName, string password, string dstDir)
+		public async Task<bool> DownloadFile(string url, string userName, string password, string dstDir)
 		{
 			WebSender webSender = new WebSender();
-			if (!await webSender.DownloadFile(UserData.BackupRootFiles, UserData.UserName, UserData.Password, dstDir,
+			if (!await webSender.DownloadFile(url, UserData.UserName, UserData.Password, dstDir,
 				    _printProgress))
 			{
 				_sendErrorToUser(webSender.LastError);

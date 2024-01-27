@@ -610,6 +610,7 @@ namespace GearShop.Services.Repository
 				.Select(x=> new Page()
 				{
 					Id = x.Id,
+					Title = x.Title,
 					Content = x.Content
 				})
 				.SingleOrDefaultAsync())
@@ -618,6 +619,7 @@ namespace GearShop.Services.Repository
 			return new ArticleDto()
 			{
 				Id = page.Id,
+				Title = page.Title,
 				Content = page.Content
 			};
 		}
@@ -651,7 +653,26 @@ namespace GearShop.Services.Repository
 				Description = x.Description,
 				TitleImage = x.TitleImage,
 				Content = x.Content,
+				PublishDate = x.Created.Value.ToString("MMMM dd, yyyy")
 			}).ToListAsync(); 
+		}
+
+		/// <summary>
+		/// Return newsfeed.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<List<ArticleDto>> GetNewsfeed(int pageId)
+		{
+			return await _dbContext.Pages.Where(x=> x.ParentId == pageId && x.Deleted == 0).OrderByDescending(x=>x.Created)
+				.Select(x => new ArticleDto()
+				{
+					Id = x.Id,
+					Title = x.Title,
+					Description = x.Description,
+					TitleImage = x.TitleImage,
+					Content = x.Content,
+					PublishDate = x.Created.Value.ToString("MMMM dd, yyyy")
+				}).ToListAsync();
 		}
 
 		/// <summary>
@@ -757,6 +778,23 @@ namespace GearShop.Services.Repository
 			{
 				Log.Error(ex.Message, ex);
 				return false;
+			}
+		}
+		
+		/// <summary>
+		/// Create database backup.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<string> BackupDbAsync()
+		{
+			try
+			{
+				return await _dbContext.BackupDbAsync();
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message, ex);
+				return null;
 			}
 		}
     }

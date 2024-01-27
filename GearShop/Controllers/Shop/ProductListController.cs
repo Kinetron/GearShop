@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using GearShop.Contracts;
 using GearShop.Models.Dto.Products;
+using GearShop.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -33,8 +34,11 @@ namespace GearShop.Controllers.Shop
 	    }
 
         // GET: ProductListController
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
 		{
+			var dto = await _gearShopRepository.GetPageContent("ShopPage");
+			ViewData["Title"] = dto.Title;
+
 			ViewData["ProductTypes"] = _gearShopRepository.GetProductTypesAsync().Result
 				.Select(x=>new KeyValuePair<int, string>(x.Id, x.Name)).ToList();
 

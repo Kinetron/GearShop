@@ -117,6 +117,12 @@ namespace GearShop.Contracts
 		/// </summary>
 		/// <returns></returns>
 		Task<ArticleDto> GetArticle(int id);
+		
+		/// <summary>
+		/// Return newsfeed.
+		/// </summary>
+		/// <returns></returns>
+		Task<List<ArticleDto>> GetNewsfeed(int pageId);
 
 		/// <summary>
 		/// Добавляет статью.
@@ -135,5 +141,11 @@ namespace GearShop.Contracts
 		/// <param name="id"></param>
 		/// <returns></returns>
 		Task<bool> DeleteArticle(int id);
-	}
+
+		/// <summary>
+		/// Create database backup.
+		/// </summary>
+		/// <returns></returns>
+		Task<string> BackupDbAsync();
+    }
 }

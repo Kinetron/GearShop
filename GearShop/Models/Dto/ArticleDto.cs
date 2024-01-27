@@ -1,4 +1,6 @@
-﻿namespace GearShop.Models.Dto
+﻿using System.Security.Policy;
+
+namespace GearShop.Models.Dto
 {
 	/// <summary>
 	/// Данные для создания статей.
@@ -28,6 +30,12 @@
 		/// Содержимое статьи.
 		/// </summary>
 		public string Content { get; set; }
+
+
+		/// <summary>
+		/// Date created article.
+		/// </summary>
+		public string PublishDate { get; set; }
 
 		/// <summary>
 		/// Имя родительской страницы.

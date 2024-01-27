@@ -49,5 +49,25 @@ namespace GearShop.Services
 
 			return partCount;
 		}
+
+		public static string? ArchiveFileToZip(string path, string directoryPathInArchive)
+		{
+			try
+			{
+				string? zipPath = Path.Combine(Path.GetDirectoryName(path), $"{Path.GetFileNameWithoutExtension(path)}.zip");
+				using (var zip = new Ionic.Zip.ZipFile())
+				{
+					zip.AddFile(path, directoryPathInArchive);
+					zip.Save(zipPath);
+				}
+
+				return zipPath;
+			}
+			catch (Exception ex)
+			{
+				LastError = $"{ex.Message} {ex.StackTrace}";
+				return null;
+			}
+		}
 	}
 }

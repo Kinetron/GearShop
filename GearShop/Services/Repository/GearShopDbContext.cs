@@ -89,6 +89,17 @@ namespace GearShop.Services.Repository
                 new SqlParameter("userName", userName)).FirstOrDefault();
         }
 
+		/// <summary>
+		/// Create database backup.
+		/// </summary>
+		/// <returns></returns>
+		public async Task<string> BackupDbAsync()
+		{
+			return (await Database.SqlQueryRaw<string> (@"DECLARE	@PathToFile varchar(100)
+														EXEC dbo.BackupDb @Path = @PathToFile OUTPUT
+														select @PathToFile as [Path]").ToListAsync()).FirstOrDefault();
+		}
+
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			modelBuilder.Entity<NonRegisteredBuyer>(entity =>
