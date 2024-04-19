@@ -458,7 +458,7 @@ namespace GearShop.Services.Repository
 		/// <returns></returns>
 		public async Task<List<ProductType>> GetProductTypesAsync()
 		{
-			return await _dbContext.ProductTypes.OrderBy(x=>x.Name).ToListAsync();
+			return await _dbContext.ProductTypes.OrderBy(x=>x.SortingOrder).ToListAsync();
 		}
 
 		/// <summary>
