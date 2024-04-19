@@ -8,7 +8,9 @@
 		public int Id { get; set; }
 
 		public string Name { get; set; } = null!;
-		
+
+		public int SortingOrder { get; set; }
+
 		public int Deleted { get; set; }
 	}
 }
