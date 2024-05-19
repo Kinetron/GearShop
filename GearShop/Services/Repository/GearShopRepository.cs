@@ -116,7 +116,7 @@ namespace GearShop.Services.Repository
 						Amount = product.Rest.Value,
 						ImageName = string.IsNullOrEmpty(product.ImageName) ? "NoPhoto.png" : product.ImageName
 					}
-				)
+				).OrderBy(x=>x.Name)
 				   .Skip((currentPage - 1) * itemsPerPage)
 				   .Take(itemsPerPage)
 				   .ToListAsync();
