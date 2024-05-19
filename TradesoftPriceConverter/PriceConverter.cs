@@ -35,13 +35,13 @@ namespace TradesoftPriceConverter
 		/// </summary>
 		private readonly string[] _productModelPropertyNames =
 		{
-			"Brand", "Name"
+			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina"
 		};
 
 		//Сolumn names in the resulting file.
 		private readonly string[] _resultFileColumns =
 		{
-			"Brand", "Name", "Article", "vnutr", "nar", "shirina"
+			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina"
 		};
 
 		private readonly string[] _lettersArray =
@@ -80,7 +80,8 @@ namespace TradesoftPriceConverter
 				return false;
 			}
 
-			GetBrand(products);
+			GetBrand(products);//Gets the manufacturer of the product.
+			GetBearingSizes(products); //Fills dimensions.
 
 			SaveResultFile(products, Path.Combine(folderPath, resultFileName));
 
@@ -218,6 +219,8 @@ namespace TradesoftPriceConverter
 			//Цикл по свойствам сущности.
 			for (int i = 0; i < _productModelPropertyNames.Length; i++)
 			{
+				if(i + 1 > columns.Length) continue; //The source file contains less than the result.
+
 				//Получаем значение для данного свойства. 
 				string cellText = columns[i];
 
@@ -275,13 +278,43 @@ namespace TradesoftPriceConverter
 			}
 		}
 
+		private void GetBearingSizes(List<TradesoftProduct> products)
+		{
+			foreach (var product in products)
+			{
+				string name = product.Name.Trim();
+				string[] data = name.Split(' ');
+
+				if (data.Length < 2) continue;
+
+				string sizesStr = data.FirstOrDefault(x => x.Contains('*'));
+				if (sizesStr == null) continue;
+
+				string[] sizesArr = sizesStr.Split('*');
+				if(sizesArr.Length < 3) continue;
+
+				//Сorrecting the error of inserting a date instead of a string in xls
+				for (int i = 0; i < sizesArr.Length; i++)
+				{
+					if (sizesArr[i].Contains('.') || sizesArr[i].Contains(','))
+					{
+						sizesArr[i] += "0";
+					}
+				}
+
+				product.Vnutr = sizesArr[0];
+				product.Nar = sizesArr[1];
+				product.Shirina = sizesArr[2];
+			}
+		}
+
 		private bool SaveResultFile(List<TradesoftProduct> products, string fileName)
 		{
 			WorkBook workBook = WorkBook.Create(ExcelFileFormat.XLS); //Not work xlsx format.
 
 			// Create a blank WorkSheet
 			WorkSheet workSheet = workBook.CreateWorkSheet("List1");
-			
+
 			//Add title.
 			for (int k = 0; k < _resultFileColumns.Length; k++)
 			{
@@ -298,12 +331,13 @@ namespace TradesoftPriceConverter
 					object propertyValue = property == null ? null : property.GetValue(product);
 
 					// Add data and styles to the new worksheet
-					workSheet[$"{_lettersArray[k]}{row}"].Value = propertyValue;
+					workSheet[$"{_lettersArray[k]}{row}"].StringValue = (string)propertyValue;
+
 				}
 
 				row++;
 			}
-
+			
 			workBook.SaveAs(fileName);
 
 			return true;
