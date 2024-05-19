@@ -4,14 +4,13 @@
 	{
 
 		private const string PriceFolder = "Files";
-		private const string ResultFileName = "result.xls";
 
 		static void Main(string[] args)
 		{
 			Console.WriteLine("Converting one format to another");
 			
 			PriceConverter converter = new PriceConverter(PrintText, PrintError);
-			converter.ConvertFile(PriceFolder, ResultFileName);
+			converter.ConvertFile(PriceFolder);
 
 			Console.WriteLine("Successfully");
 		}

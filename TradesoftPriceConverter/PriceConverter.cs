@@ -18,12 +18,12 @@ namespace TradesoftPriceConverter
 		private readonly Action<string> _sendErrorToUser;
 
 		private WorkBook _workBook = null;
-		
+
 		/// <summary>
 		/// Сообщение об ошибке.
 		/// </summary>
 		public string LastError { get; private set; }
-		
+
 		/// <summary>
 		/// Путь к обрабатываемому файлу.
 		/// </summary>
@@ -54,13 +54,16 @@ namespace TradesoftPriceConverter
 			"AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ"
 		};
 
+		const string ResultXlsFileName = "result.xls";
+		const string ResultCsvFileName = "result.csv";
+
 		public PriceConverter(Action<string> sendTextToUser, Action<string> sendErrorToUser)
 		{
 			_sendTextToUser = sendTextToUser;
 			_sendErrorToUser = sendErrorToUser;
 		}
 
-		public bool ConvertFile(string folderPath, string resultFileName)
+		public bool ConvertFile(string folderPath)
 		{
 			string filePath = CreateFilesDir(folderPath);
 			if (filePath == null) return false;
@@ -80,14 +83,16 @@ namespace TradesoftPriceConverter
 				return false;
 			}
 
+			FilterProducts(products);
 			GetBrand(products);//Gets the manufacturer of the product.
 			GetBearingSizes(products); //Fills dimensions.
 
-			SaveResultFile(products, Path.Combine(folderPath, resultFileName));
+			SaveResultFile(products, Path.Combine(folderPath, ResultXlsFileName));
+			SaveToCsv(products, Path.Combine(folderPath, ResultCsvFileName));
 
 			return true;
 		}
-		
+
 
 		/// <summary>
 		/// Создает папку окуда будет считат прайс лист. Возвращает первый файл похожий на прайс.
@@ -111,7 +116,7 @@ namespace TradesoftPriceConverter
 
 			return files[0];
 		}
-		
+
 		/// <summary>
 		/// Открывает эксель файл
 		/// </summary>
@@ -219,7 +224,7 @@ namespace TradesoftPriceConverter
 			//Цикл по свойствам сущности.
 			for (int i = 0; i < _productModelPropertyNames.Length; i++)
 			{
-				if(i + 1 > columns.Length) continue; //The source file contains less than the result.
+				if (i + 1 > columns.Length) continue; //The source file contains less than the result.
 
 				//Получаем значение для данного свойства. 
 				string cellText = columns[i];
@@ -254,6 +259,14 @@ namespace TradesoftPriceConverter
 			}
 
 			return product;
+		}
+
+		private void FilterProducts(List<TradesoftProduct> products)
+		{
+			foreach (var product in products)
+			{
+				product.Name = product.Name.Replace("\"", "");
+			}
 		}
 
 		/// <summary>
@@ -291,15 +304,12 @@ namespace TradesoftPriceConverter
 				if (sizesStr == null) continue;
 
 				string[] sizesArr = sizesStr.Split('*');
-				if(sizesArr.Length < 3) continue;
+				if (sizesArr.Length < 3) continue;
 
 				//Сorrecting the error of inserting a date instead of a string in xls
 				for (int i = 0; i < sizesArr.Length; i++)
 				{
-					if (sizesArr[i].Contains('.') || sizesArr[i].Contains(','))
-					{
-						sizesArr[i] += "0";
-					}
+				   sizesArr[i] = sizesArr[i].Replace("(", "").Replace(")", "");
 				}
 
 				product.Vnutr = sizesArr[0];
@@ -321,11 +331,11 @@ namespace TradesoftPriceConverter
 				// Add data and styles to the new worksheet
 				workSheet[$"{_lettersArray[k]}1"].Value = _resultFileColumns[k];
 			}
-			
+
 			int row = 2;
 			foreach (var product in products)
 			{
-				for(int k = 0; k < _resultFileColumns.Length; k++)
+				for (int k = 0; k < _resultFileColumns.Length; k++)
 				{
 					PropertyInfo property = product.GetType().GetProperty(_resultFileColumns[k]);
 					object propertyValue = property == null ? null : property.GetValue(product);
@@ -337,10 +347,44 @@ namespace TradesoftPriceConverter
 
 				row++;
 			}
-			
+
 			workBook.SaveAs(fileName);
 
 			return true;
+		}
+
+		private void SaveToCsv(List<TradesoftProduct> products, string fileName)
+		{
+			char separator = ';';
+
+			using (Stream stream = File.OpenWrite(fileName))
+			using (var writer = new StreamWriter(stream, new UTF8Encoding(true)))
+			{
+				List<string> title = new List<string>();
+				//Add title.
+				for (int k = 0; k < _resultFileColumns.Length; k++)
+				{
+					title.Add(_resultFileColumns[k]);
+				}
+
+				string text = string.Join(separator, title);
+				writer.WriteLine(text);
+
+
+				foreach (var item in products)
+				{
+					List<string> info = new List<string>();
+					info.Add(item.Brand);
+					info.Add(item.Name);
+					info.Add(item.Article);
+					info.Add(item.Vnutr);
+					info.Add(item.Nar);
+					info.Add(item.Shirina);
+
+					text = string.Join(separator, info);
+					writer.WriteLine(text);
+				}
+			}
 		}
 	}
 }
