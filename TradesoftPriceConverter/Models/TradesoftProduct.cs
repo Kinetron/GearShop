@@ -15,5 +15,7 @@ namespace TradesoftPriceConverter.Models
 		public string Vnutr { get; set; } = string.Empty;
 		public string Nar { get; set; } = string.Empty;
 		public string Shirina { get; set; } = string.Empty;
+
+		public string ImportBearingName{ get; set; } = string.Empty;
 	}
 }

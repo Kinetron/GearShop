@@ -35,13 +35,13 @@ namespace TradesoftPriceConverter
 		/// </summary>
 		private readonly string[] _productModelPropertyNames =
 		{
-			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina"
+			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina", "ImportBearingName"
 		};
 
 		//Сolumn names in the resulting file.
 		private readonly string[] _resultFileColumns =
 		{
-			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina"
+			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina", "ImportBearingName"
 		};
 
 		private readonly string[] _lettersArray =
@@ -87,6 +87,7 @@ namespace TradesoftPriceConverter
 			GetBrand(products);//Gets the manufacturer of the product.
 			GetBearingSizes(products); //Fills dimensions.
 
+			GetImportBearingName( products);
 			SaveResultFile(products, Path.Combine(folderPath, ResultXlsFileName));
 			SaveToCsv(products, Path.Combine(folderPath, ResultCsvFileName));
 
@@ -318,6 +319,23 @@ namespace TradesoftPriceConverter
 			}
 		}
 
+		/// <summary>
+		/// Get import name from name column.
+		/// </summary>
+		/// <param name="products"></param>
+		private void GetImportBearingName(List<TradesoftProduct> products)
+		{
+			foreach (var product in products)
+			{
+				string name = product.Name.Trim();
+				string[] data = name.Split(' ');
+
+				if (data.Length == 0) continue;
+
+				product.ImportBearingName = data[0];
+			}
+		}
+
 		private bool SaveResultFile(List<TradesoftProduct> products, string fileName)
 		{
 			WorkBook workBook = WorkBook.Create(ExcelFileFormat.XLS); //Not work xlsx format.
@@ -380,6 +398,7 @@ namespace TradesoftPriceConverter
 					info.Add(item.Vnutr);
 					info.Add(item.Nar);
 					info.Add(item.Shirina);
+					info.Add(item.ImportBearingName);
 
 					text = string.Join(separator, info);
 					writer.WriteLine(text);
