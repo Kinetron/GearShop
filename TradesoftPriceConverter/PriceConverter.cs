@@ -266,7 +266,10 @@ namespace TradesoftPriceConverter
 		{
 			foreach (var product in products)
 			{
-				product.Name = product.Name.Replace("\"", "");
+				product.Name = product.Name.Replace("\"", "")
+					.Replace("\t", "").Replace("   ", " ")
+					.Replace("  "," ");// For old 1C.
+
 			}
 		}
 
@@ -285,7 +288,7 @@ namespace TradesoftPriceConverter
 				product.Brand = data[1];
 
 
-				if (product.Brand.Substring(0, 1) == "(")
+				if (product.Brand.Length > 1 && product.Brand.Substring(0, 1) == "(")
 				{
 					product.Brand = "ГОСТ";
 				}
