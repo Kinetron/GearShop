@@ -321,9 +321,12 @@ namespace DataParser
                     object value = TypesConverter.ConvertTypes(propertyValue, cellText);
                     if (value == null)
                     {
+                        
+
                         LastError =
                             $"Не удалось преобразовать {cellText} в тип данных {property.PropertyType.Name} для {product.Name}.";
-                        return null;
+
+						return null;
                     }
 
                     property.SetValue(product, value, null);
@@ -540,7 +543,24 @@ namespace DataParser
 
 						LastError =
 							$"Не удалось преобразовать {cellText} в тип данных {property.PropertyType.Name} для {product.Name}.";
-						return null;
+                        
+						if (property.Name != "Rest")
+						{
+							return null;
+						}
+
+						//Дробный остаток. 15,566 Новые изменения в б.д.
+                        string[] str = cellText.Split(',');
+                        cellText = str[0];
+						value = TypesConverter.ConvertTypes(propertyValue, cellText);
+
+						if (value == null)
+						{
+							LastError =
+								$"Не удалось преобразовать {cellText} в тип данных {property.PropertyType.Name} для {product.Name}.";
+							return null;
+						}
+
 					}
 
 					property.SetValue(product, value, null);
