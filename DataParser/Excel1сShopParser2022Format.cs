@@ -78,7 +78,7 @@ namespace DataParser
         /// </summary>
         private readonly int[] _sourceColumnAssociation =
         {
-            4, 13, 14, 15, 16, 17, 18 //Номер ячейки в файле.
+            3, 12, 13, 14, 15, 16, 17 //Номер ячейки в файле.
         };
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace DataParser
 		/// <summary>
 		/// Номер ячейки содержащей название продукта.
 		/// </summary>
-		private readonly int _productNamePos = 4;
+		private readonly int _productNamePos = 3;
 
 		/// <summary>
 		/// Сообщение об ошибке.
@@ -529,7 +529,16 @@ namespace DataParser
 						char nbsp = (char)160;
 						cellText = cellText.Replace(nbsp, ' ').Replace(" ", "");
 					}
-                    
+
+                    //Rest float - contain point or dot.
+					if (property.Name == "Rest" && (cellText.Contains(',') || cellText.Contains('.')))
+					{
+						cellText = cellText.Replace(',', '.');
+                        int pointIndex = cellText.IndexOf('.');
+                        cellText = cellText.Substring(0, pointIndex);
+					}
+
+
 					//Для свойств ссылочного типа обязательно значение отличное от null. Иначе исключение.
 					object value = TypesConverter.ConvertTypes(propertyValue, cellText);
 					if (value == null)
