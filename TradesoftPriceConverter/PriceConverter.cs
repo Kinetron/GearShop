@@ -35,13 +35,13 @@ namespace TradesoftPriceConverter
 		/// </summary>
 		private readonly string[] _productModelPropertyNames =
 		{
-			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina"
+			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina", "ImportBearingName"
 		};
 
 		//Сolumn names in the resulting file.
 		private readonly string[] _resultFileColumns =
 		{
-			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina"
+			"Brand", "Name", "Article", "Vnutr", "Nar", "Shirina", "ImportBearingName"
 		};
 
 		private readonly string[] _lettersArray =
@@ -87,6 +87,7 @@ namespace TradesoftPriceConverter
 			GetBrand(products);//Gets the manufacturer of the product.
 			GetBearingSizes(products); //Fills dimensions.
 
+			GetImportBearingName( products);
 			SaveResultFile(products, Path.Combine(folderPath, ResultXlsFileName));
 			SaveToCsv(products, Path.Combine(folderPath, ResultCsvFileName));
 
@@ -265,7 +266,10 @@ namespace TradesoftPriceConverter
 		{
 			foreach (var product in products)
 			{
-				product.Name = product.Name.Replace("\"", "");
+				product.Name = product.Name.Replace("\"", "")
+					.Replace("\t", "").Replace("   ", " ")
+					.Replace("  "," ");// For old 1C.
+
 			}
 		}
 
@@ -284,7 +288,7 @@ namespace TradesoftPriceConverter
 				product.Brand = data[1];
 
 
-				if (product.Brand.Substring(0, 1) == "(")
+				if (product.Brand.Length > 1 && product.Brand.Substring(0, 1) == "(")
 				{
 					product.Brand = "ГОСТ";
 				}
@@ -315,6 +319,23 @@ namespace TradesoftPriceConverter
 				product.Vnutr = sizesArr[0];
 				product.Nar = sizesArr[1];
 				product.Shirina = sizesArr[2];
+			}
+		}
+
+		/// <summary>
+		/// Get import name from name column.
+		/// </summary>
+		/// <param name="products"></param>
+		private void GetImportBearingName(List<TradesoftProduct> products)
+		{
+			foreach (var product in products)
+			{
+				string name = product.Name.Trim();
+				string[] data = name.Split(' ');
+
+				if (data.Length == 0) continue;
+
+				product.ImportBearingName = data[0];
 			}
 		}
 
@@ -380,6 +401,7 @@ namespace TradesoftPriceConverter
 					info.Add(item.Vnutr);
 					info.Add(item.Nar);
 					info.Add(item.Shirina);
+					info.Add(item.ImportBearingName);
 
 					text = string.Join(separator, info);
 					writer.WriteLine(text);
