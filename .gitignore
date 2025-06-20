@@ -5,7 +5,11 @@
 
 /info
 /GearShop/Upload
-/GearShop/wwwroot/productImages 
+/GearShop/wwwroot/productImages
+/GearShop/wwwroot/gallery  
+/GearShop/wwwroot/images
+/GearShop/wwwroot/gallery  
+/GearShop/wwwroot/article-files 
 
 
 # User-specific files
