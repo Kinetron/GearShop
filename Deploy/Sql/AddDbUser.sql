@@ -19,6 +19,6 @@ EXEC sp_addrolemember 'db_datareader', 'TestGear';
 
 
 -- If not connect
-SELECT SERVERPROPERTY('IsIntegratedSecurityOnly');
+--SELECT SERVERPROPERTY('IsIntegratedSecurityOnly');
 -- If = 1 open SSMS and change mode in "Security"
 

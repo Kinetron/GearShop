@@ -1,8 +1,9 @@
 ﻿@using GearShop.Models.Dto
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @using GearShop.Models.ViewModels
+@using GearShop.Resources
+@using Microsoft.Extensions.Localization
 @model PageViewModel
-
 
 <style>
 	.contact-image {
@@ -23,7 +24,7 @@
 	}
 </style>
 
-@*Добавление кнопок редактирования в режиме администрирования.*@
+@*Adding edit buttons in administration mode.*@
 <div editable-block="true" content-element-name="pageContent" page-id="@Model.Id"></div>
 
 <div class="ui-grid ui-grid-responsive">
@@ -41,20 +42,20 @@
 			</div>
 			<div id="mainPаnel" class="main-panel">
 				<p>
-					<button id="toBuyBtn" type="button">К покупкам</button>
+					<button id="toBuyBtn" type="button">@ViewData["BackToShopping"]</button>
 				</p>
 		
 				<div id="pageContent">
 					@Html.Raw(Model.PageContent)
 				</div>
 				<p>
-					<a class="nav-link text-dark contact-label" asp-controller="Contacts" asp-action="Index">Контакты</a>
+					<a class="nav-link text-dark contact-label" asp-controller="Contacts" asp-action="Index">@ViewData["Contacts"]</a>
 				</p>
 			</div>
 		</div>
 		<div class="ui-grid-col-8 ui-widget ui-widget-content ui-corner-all ui-panel">
 			<p>
-				<h3 class="title-news-block">Лента новостей</h3>
+				<h3 class="title-news-block">@ViewData["NewsFeed"]</h3>
 				<hr>
 			</p>
 			<div id="newsfeed">

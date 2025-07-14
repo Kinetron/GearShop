@@ -1,8 +1,10 @@
-﻿@using GearShop.Models.ViewModels
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using GearShop.Models.ViewModels
 @model PageViewModel
 
 <div id="titleBlock">
-	<h3>Статьи на сайте</h3>
+	<h3>@Localizer["PageTitle"]</h3>
 </div>
 
 

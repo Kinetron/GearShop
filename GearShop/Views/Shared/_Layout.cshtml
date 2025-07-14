@@ -1,4 +1,7 @@
 ﻿@addTagHelper *, Wangkanai.Detection
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+
 <style>
 	.hide-block {
 		display: none;
@@ -37,7 +40,7 @@
 <head>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-	<title>Магазин запчастей</title>
+	<title>@Localizer["SiteTitle"]</title>
 	<meta name="description" content="@(@ViewData["Title"])">
 	<script src="https://vk.com/js/api/openapi.js?169" type="text/javascript"></script>
 	<link rel="icon" href="~/favicon.ico" type="image/x-icon">
@@ -60,28 +63,28 @@
 			<div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
 				<ul class="navbar-nav flex-grow-1">
 					<li class="nav-item">
-						<a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Главная</a>
+							<a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">@Localizer["MainPageName"]</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link text-dark" asp-area="" asp-controller="ProductList" asp-action="Index">Магазин</a>
+							<a class="nav-link text-dark" asp-area="" asp-controller="ProductList" asp-action="Index">@Localizer["StorePageName"]</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link text-dark" asp-controller="Articles" asp-action="Index">Статьи</a>
+							<a class="nav-link text-dark" asp-controller="Articles" asp-action="Index">@Localizer["ArticlesPageName"]</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link text-dark" asp-controller="Contacts" asp-action="Index">Контакты</a>
+							<a class="nav-link text-dark" asp-controller="Contacts" asp-action="Index">@Localizer["ContactsPageName"]</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link text-dark" asp-controller="Basket" asp-action="Index">Корзина</a>
+							<a class="nav-link text-dark" asp-controller="Basket" asp-action="Index">@Localizer["ShoppingCartPageName"]</a>
 					</li>
 					<li class="hide-block nav-item" id="adminLink">
-						<a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Администрирование</a>
+							<a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">@Localizer["AdministrationPageName"]</a>
 					</li>
 					<li class="hide-block nav-item" id="logInLink">
-						<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Authentication">Войти</a>
+							<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Authentication">@Localizer["LoginPageName"]</a>
 					</li>
 					<li class="hide-block nav-item" id="logOutLink">
-						<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Logout">Выйти</a>
+							<a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Logout">@Localizer["LogoutPageName"]</a>
 					</li>
 				</ul>
 			</div>
@@ -113,11 +116,11 @@
 
 <footer class="border-top footer text-muted">
 	<div class="container">
-		@*Добавление кнопок редактирования в режиме администрирования.*@
+			@*Adding edit buttons in administration mode.*@
 		<div editable-block="true" content-element-name="footerContainer"></div>
 		<div id="footerContainer"></div>
 	</div>
-	<div id="counter"></div> @*Счетчик посещяемости для метрики*@
+		<div id="counter"></div> @*Traffic counter*@
 </footer>
 	@await RenderSectionAsync("Scripts", required: false)
 </body>
@@ -181,7 +184,7 @@ const MainMenuScript = {
 	  }
 }
 
-@*Обвертка для реализации(uploadAdapter.js) плагина загрузки картинок для CKEditor. Так как стандартного нет. Есть платный.*@
+	@*The wrapper for the implementation(uploadAdapter.js) image upload plugin for CKEditor. Since there is no standard one. There is a paid one.*@
 function uploadAdapterPlugin(editor) {
 	editor.plugins.get( 'FileRepository' ).createUploadAdapter = ( loader ) => {
 		return new GearUploadAdapter(loader, '@Url.Action("UploadArticleImage", "PageEditor")');

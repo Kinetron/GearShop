@@ -2,9 +2,12 @@
 using GearShop.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using System.Security.Claims;
 using GearShop.Models.ViewModels;
+using GearShop.Resources;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Localization;
 using Newtonsoft.Json;
+
 
 namespace GearShop.Controllers
 {
@@ -12,11 +15,14 @@ namespace GearShop.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IGearShopRepository _gearShopRepository;
+        private readonly IStringLocalizer<HomeController> _localizer;
 
-        public HomeController(ILogger<HomeController> logger, IGearShopRepository gearShopRepository)
+		public HomeController(ILogger<HomeController> logger, IGearShopRepository gearShopRepository,
+			IStringLocalizer<HomeController> localizer)
         {
 	        _logger = logger;
 	        _gearShopRepository = gearShopRepository;
+            _localizer = localizer;
         }
 
         public async Task<IActionResult> Index()
@@ -33,7 +39,11 @@ namespace GearShop.Controllers
             //For show nesfeed block.
 			var articleDto = await _gearShopRepository.GetPageContent("ArticlesPage");
             ViewData["articlePageId"] = articleDto.Id;
-          
+
+			ViewData["NewsFeed"] = _localizer["NewsFeed"];
+			ViewData["BackToShopping"] = _localizer["BackToShopping"];
+			ViewData["Contacts"] = _localizer["Contacts"];
+
 			return View(model);
         }
         

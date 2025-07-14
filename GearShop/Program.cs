@@ -1,24 +1,19 @@
-using System.Security.Claims;
+using System.Globalization;
 using System.Text;
-using Azure.Core;
 using GearShop.Contracts;
-using GearShop.Models.Dto.Authentication;
 using GearShop.Services;
 using GearShop.Services.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
-using static Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
+using Microsoft.AspNetCore.Localization;
 using WebMarkupMin.AspNetCore7;
+using Microsoft.Extensions.Options;
+using System.Linq;
 
 namespace GearShop
 {
@@ -29,9 +24,9 @@ namespace GearShop
 			var builder = WebApplication.CreateBuilder(args);
             var config = builder.Configuration;
 
-            //Добавить нормальную обработку версий!
-            Console.WriteLine(config["Version"]);
+            Console.WriteLine(config["Version"]); //Change to a normal implementation
 
+            builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 			builder.Services.AddDbContext<GearShopDbContext>(options =>
               options.UseSqlServer(config["MsSqlConnectionStrings:Default"]), ServiceLifetime.Transient);
 
@@ -60,7 +55,7 @@ namespace GearShop
                 };
             });
 
-			builder.Services.AddDetection(); //Определение типа устройства.
+			builder.Services.AddDetection(); //Device type detection.
 
 			builder.Services.AddSingleton<IEMailNotifier, EMailNotifier>(x=> 
 	            new EMailNotifier(config["EmailNotifier:senderEmail"],
@@ -105,12 +100,14 @@ namespace GearShop
 
 			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-            // Add services to the container.
+           //Add services to the container.
            builder.Services.AddControllersWithViews()
-               .AddRazorRuntimeCompilation(); //Для верстки страниц без перезагрузки сервиса.
+               .AddRazorRuntimeCompilation() //For page debug without restarting the service.
+               .AddViewLocalization() //Localization of views
+			   .AddDataAnnotationsLocalization(); // Localization of validation attributes
 
-            //Сжатие js текста.
-            builder.Services.AddWebMarkupMin(options =>
+			//JS text compression.
+			builder.Services.AddWebMarkupMin(options =>
                   {
                       options.AllowMinificationInDevelopmentEnvironment = true;
                       options.AllowCompressionInDevelopmentEnvironment = true;
@@ -121,11 +118,11 @@ namespace GearShop
 
             Log.Logger = new LoggerConfiguration()
 	           .MinimumLevel.Information()
-	           .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) //Выводить только варнинги Microsoft.
+	           .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
 	           .WriteTo.File(
 		           @"./logs/log.txt",
-		           shared: true, //Доступен всем процессам.
-		           rollingInterval: RollingInterval.Day,
+		           shared: true, //Available to all processes.
+				   rollingInterval: RollingInterval.Day,
 		           flushToDiskInterval: TimeSpan.FromSeconds(20),
 		           outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}")
 	           .CreateLogger();
@@ -136,7 +133,22 @@ namespace GearShop
 				options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 			});
 
+			string defaultCulture = config["Globalization:DefaultCulture"];
+			builder.Services.Configure<RequestLocalizationOptions>(options =>
+			{
+				var cultures = new[]
+				{
+					new CultureInfo(defaultCulture)
+				};
+
+				options.DefaultRequestCulture = new RequestCulture(defaultCulture);
+				options.SupportedCultures = cultures;
+				options.SupportedUICultures = cultures;
+			});
+
 			var app = builder.Build();
+
+			app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 
 			app.UseWebMarkupMin();
 
@@ -149,14 +161,14 @@ namespace GearShop
             }
 
 			app.UseSerilogRequestLogging();
-
+			
 			app.UseHttpsRedirection();
 	
 			app.UseStaticFiles();
 
             app.UseCookiePolicy();
 
-            app.UseDetection(); //Определение типа устройства.
+            app.UseDetection();
 			app.UseSession();
 
             app.Use(async (context, next) =>
